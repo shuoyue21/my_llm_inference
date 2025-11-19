@@ -1,0 +1,21 @@
+172.17.0.1
+
+docker build \
+  --build-arg HTTP_PROXY=http://172.17.0.1:21734 \
+  --build-arg HTTPS_PROXY=http://172.17.0.1:21734 \
+  -t cuda-dev .
+
+#--rm 退出后自动删除
+docker run -it \
+  --name llminference \
+  --gpus all \
+  -v "$(pwd)":/app \
+  -w /app \
+  -e HTTP_PROXY=http://172.17.0.1:7210 \
+  -e HTTPS_PROXY=http://172.17.0.1:7210 \
+  -e http_proxy=http://172.17.0.1:7210 \
+  -e https_proxy=http://172.17.0.1:7210 \
+  -e NO_PROXY=localhost,127.0.0.1,example.com \
+  cuda-dev \
+  tail -f /dev/null
+  bash
