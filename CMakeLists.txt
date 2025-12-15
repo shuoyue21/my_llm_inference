@@ -12,8 +12,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CUDA_STANDARD_REQUIRED ON)
 set(CMAKE_CUDA_STANDARD 20)
-
-set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
 
 option(LLAMA3_SUPPORT OFF)
 if (LLAMA3_SUPPORT)
@@ -91,7 +90,7 @@ find_package(glog REQUIRED)
 find_package(Armadillo REQUIRED)
 
 # aux_source_directory(kuiper/source/tensor/ DIR_TENSOR)
-# aux_source_directory(kuiper/source/base/ DIR_BASE)
+aux_source_directory(source/base/ DIR_BASE)
 # aux_source_directory(kuiper/source/op/ DIR_OP)
 # aux_source_directory(kuiper/source/model/ DIR_MODEL)
 # aux_source_directory(kuiper/source/op/kernels/cpu DIR_KERNEL_CPU)
@@ -100,24 +99,23 @@ find_package(Armadillo REQUIRED)
 # aux_source_directory(kuiper/source/sampler DIR_SAMPLE)
 
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/lib)
-
+add_library(llama SHARED ${DIR_BASE})
 #add_library(llama SHARED ${DIR_TENSOR} ${DIR_BASE} ${DIR_OP} ${DIR_KERNEL} ${DIR_MODEL} ${DIR_KERNEL_CPU} ${DIR_KERNEL_CUDA} ${DIR_KERNEL} ${DIR_SAMPLE})
-# target_link_libraries(llama sentencepiece glog::glog gtest gtest_main pthread cudart armadillo)
-# target_link_directories(llama PUBLIC ${CMAKE_CUDA_COMPILER_LIBRARY_ROOT}/lib64)
+target_link_libraries(llama sentencepiece glog::glog gtest gtest_main pthread cudart armadillo)
+target_link_directories(llama PUBLIC ${CMAKE_CUDA_COMPILER_LIBRARY_ROOT}/lib64)
 
-# target_include_directories(llama PUBLIC ${glog_INCLUDE_DIR})
-# target_include_directories(llama PUBLIC ${PROJECT_SOURCE_DIR}/kuiper/include)
-# target_include_directories(llama PUBLIC ${Armadillo_INCLUDE_DIR})
-# target_include_directories(llama PUBLIC ${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES})
+target_include_directories(llama PUBLIC ${glog_INCLUDE_DIR})
+target_include_directories(llama PUBLIC ${PROJECT_SOURCE_DIR}/include)
+target_include_directories(llama PUBLIC ${Armadillo_INCLUDE_DIR})
+target_include_directories(llama PUBLIC ${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES})
 
-# if(USE_CPM)
-#   # Add sentencepiece include directory
-#   target_include_directories(llama PUBLIC ${sentencepiece_SOURCE_DIR}/src)
-# endif()
+if(USE_CPM)
+  # Add sentencepiece include directory
+  target_include_directories(llama PUBLIC ${sentencepiece_SOURCE_DIR}/src)
+endif()
 
-# set_target_properties(llama PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
+set_target_properties(llama PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
 # add_subdirectory(test)
 # add_subdirectory(demo)
 
-add_executable(test test.cpp)
-target_link_libraries(test glog::glog GTest::GTest GTest::Main)
+
