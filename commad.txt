@@ -18,4 +18,16 @@ docker run -it \
   -e NO_PROXY=localhost,127.0.0.1,example.com \
   cuda-dev \
   tail -f /dev/null
-  bash
+
+  docker run -d \
+  --name llminference \
+  --gpus all \
+  -v "$(pwd)":/app \
+  -w /app \
+  -e HTTP_PROXY=http://172.17.0.1:7210 \
+  -e HTTPS_PROXY=http://172.17.0.1:7210 \
+  -e http_proxy=http://172.17.0.1:7210 \
+  -e https_proxy=http://172.17.0.1:7210 \
+  -e NO_PROXY=localhost,127.0.0.1,example.com \
+  cuda-dev \
+  tail -f /dev/null
