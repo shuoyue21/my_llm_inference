@@ -15,7 +15,7 @@ enum class ModelBufferType {
   kInputTokens = 0,
   kInputEmbeddings = 1,
   kOutputRMSNorm = 2,
-  KeyCache = 3,
+  kKeyCache = 3,
   kValueCache = 4,
   kQuery = 5,
   kInputPos = 6,
@@ -94,7 +94,7 @@ enum class TokenizerType {
 
 class Status {
  public:
-  Status(int code = StatusCode::kSuccess, std::string err_message = "");
+  Status(int code = StatusCode::kSuccess, std::string_view err_message = "");
 
   Status(const Status& other) = default;
 
@@ -134,19 +134,13 @@ namespace error {
     }                                                                                      \
   } while (0)
 
-Status Success(const std::string& err_msg = "");
-
-Status FunctionNotImplement(const std::string& err_msg = "");
-
-Status PathNotVaild(const std::string& err_msg = "");
-
-Status ModeParseError(const std::string& err_msg = "");
-
-Status InternalError(const std::string& err_msg = "");
-
-Status KeyHasExits(const std::string& err_msg = "");
-
-Status InvaildArgument(const std::string& err_msg = "");
+Status Success(std::string_view err_msg = "");
+Status FunctionNotImplement(std::string_view err_msg = "");
+Status PathNotVaild(std::string_view err_msg = "");
+Status ModeParseError(std::string_view err_msg = "");
+Status InternalError(std::string_view err_msg = "");
+Status KeyHasExits(std::string_view err_msg = "");
+Status InvaildArgument(std::string_view err_msg = "");
 
 }  // namespace error
 
