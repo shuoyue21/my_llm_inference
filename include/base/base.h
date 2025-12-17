@@ -1,5 +1,5 @@
-#ifndef FORWARD_INCLUDE_BASE_BASE_H
-#define FORWARD_INCLUDE_BASE_BASE_H
+#ifndef FORWARD_INCLUDE_BASE_BASE_H_
+#define FORWARD_INCLUDE_BASE_BASE_H_
 #include <glog/logging.h>
 #include <cstddef>
 #include <cstdint>

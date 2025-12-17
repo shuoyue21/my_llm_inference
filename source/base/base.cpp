@@ -34,14 +34,21 @@ const std::string& Status::get_err_msg() const { return message_; }
 void Status::set_err_msg(const std::string& msg) { message_ = msg; }
 
 namespace error {
+
 Status Success(std::string_view err_msg) { return Status{kSuccess, err_msg}; }
+
 Status FunctionNotImplement(std::string_view err_msg) {
   return Status{kFunctionUnImplement, err_msg};
 }
+
 Status PathNotVaild(std::string_view err_msg) { return Status{kPathNotVaild, err_msg}; }
+
 Status ModeParseError(std::string_view err_msg) { return Status{kModeParseError, err_msg}; }
+
 Status InternalError(std::string_view err_msg) { return Status{kInternalError, err_msg}; }
+
 Status KeyHasExits(std::string_view err_msg) { return Status{kKeyValueHasExits, err_msg}; }
+
 Status InvaildArgument(std::string_view err_msg) { return Status{kInvaildArgument, err_msg}; }
 }  // namespace error
 
