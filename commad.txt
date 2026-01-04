@@ -24,10 +24,25 @@ docker run -it \
   --gpus all \
   -v "$(pwd)":/app \
   -w /app \
-  -e HTTP_PROXY=http://172.17.0.1:7210 \
-  -e HTTPS_PROXY=http://172.17.0.1:7210 \
-  -e http_proxy=http://172.17.0.1:7210 \
-  -e https_proxy=http://172.17.0.1:7210 \
+  -e HTTP_PROXY=http://172.17.0.1:7890 \
+  -e HTTPS_PROXY=http://172.17.0.1:7890 \
+  -e http_proxy=http://172.17.0.1:7890 \
+  -e https_proxy=http://172.17.0.1:7890 \
   -e NO_PROXY=localhost,127.0.0.1,example.com \
-  cuda-dev \
+  llm_infer \
+  tail -f /dev/null
+
+
+docker run -d \
+  --name llminference \
+  --network host \
+  --gpus all \
+  -v "$(pwd)":/app \
+  -w /app \
+  -e HTTP_PROXY=http://127.0.0.1:7890 \
+  -e HTTPS_PROXY=http://127.0.0.1:7890 \
+  -e http_proxy=http://127.0.0.1:7890 \
+  -e https_proxy=http://127.0.0.1:7890 \
+  -e NO_PROXY=localhost,127.0.0.1 \
+  llm_infer \
   tail -f /dev/null

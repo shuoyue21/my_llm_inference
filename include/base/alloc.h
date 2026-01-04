@@ -1,6 +1,7 @@
 #ifndef FORWARD_INCLUDE_BASE_ALLOC_H_
 #define FORWARD_INCLUDE_BASE_ALLOC_H_
 #include <map>
+#include <memory>
 #include "base.h"
 namespace base {
 enum class MemcpyKind {
@@ -54,7 +55,7 @@ struct CudaMemoryBuffer {
 
 class CUDADeviceAllocator : public DeviceAllocator {
  private:
-  mutable std::map<int, size_t> no_busy_cnt_;
+  mutable std::map<int, size_t> no_busy_cnt_;  // 空闲的小内存
   mutable std::map<int, std::vector<CudaMemoryBuffer>> big_buffers_map_;
   mutable std::map<int, std::vector<CudaMemoryBuffer>> cuda_buffers_map_;
 
@@ -66,5 +67,30 @@ class CUDADeviceAllocator : public DeviceAllocator {
   void release(void* ptr) const override;
 };
 
+class CPUDeviceAllocatorFactory {
+ public:
+  static std::shared_ptr<CPUDeviceAllocator> get_instance() {
+    if (instance == nullptr) {
+      instance = std::make_shared<CPUDeviceAllocator>();
+    }
+    return instance;
+  }
+
+ private:
+  static std::shared_ptr<CPUDeviceAllocator> instance;
+};
+
+class CUDADeviceAllocatorFactory {
+ private:
+  static std::shared_ptr<CUDADeviceAllocator> instance;
+
+ public:
+  static std::shared_ptr<CUDADeviceAllocator> get_instance() {
+    if (instance == nullptr) {
+      instance = std::make_shared<CUDADeviceAllocator>();
+    }
+    return instance;
+  }
+};
 }  // namespace base
 #endif  // FORWARD_INCLUDE_BASE_ALLOC_H_

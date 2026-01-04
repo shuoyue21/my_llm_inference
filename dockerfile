@@ -1,4 +1,4 @@
-FROM docker.io/nvidia/cuda:12.4.0-devel-ubuntu22.04
+FROM swr.cn-north-4.myhuaweicloud.com/ddn-k8s/docker.io/nvidia/cuda:13.1.0-devel-ubuntu24.04
 
 # 可选：HTTP/HTTPS 代理（build 时通过 --build-arg 传入）
 # ARG HTTP_PROXY
