@@ -38,7 +38,7 @@ namespace base {
 enum class DeviceType : uint8_t {
   kDeviceUnknown = 0,
   kDeviceCPU = 1,
-  kDeviceGPU = 2,
+  kDeviceCUDA = 2,
 };
 
 enum class DataType : uint8_t {

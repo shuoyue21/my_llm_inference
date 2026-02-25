@@ -1,7 +1,7 @@
 #include <cuda_runtime_api.h>
 #include "base/alloc.h"
 namespace base {
-CUDADeviceAllocator::CUDADeviceAllocator() : DeviceAllocator(DeviceType::kDeviceGPU) {}
+CUDADeviceAllocator::CUDADeviceAllocator() : DeviceAllocator(DeviceType::kDeviceCUDA) {}
 
 void* CUDADeviceAllocator::allocate(size_t byte_size) const {
   int id = -1;

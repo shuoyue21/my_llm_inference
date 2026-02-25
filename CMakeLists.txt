@@ -13,6 +13,7 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CUDA_STANDARD_REQUIRED ON)
 set(CMAKE_CUDA_STANDARD 20)
 set(CMAKE_CXX_EXTENSIONS OFF)
+set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
 option(LLAMA3_SUPPORT OFF)
 if (LLAMA3_SUPPORT)
@@ -30,92 +31,108 @@ if (QWEN3_SUPPORT)
   message(STATUS "QWEN3 SUPPORT")
   add_definitions(-DQWEN3_SUPPORT)
 endif()
-# ---- Add dependencies via CPM ----
-# see https://github.com/TheLartians/CPM.cmake for more info
-option(USE_CPM "Use CPM for dependency management" OFF)
 
-if(USE_CPM)
-  # Use CPM to manage dependencies
-  include(cmake/CPM.cmake)
+# ---- Add dependencies via FetchContent ----
+include(FetchContent)
 
-  CPMAddPackage(
-    NAME GTest
-    GITHUB_REPOSITORY google/googletest
-    VERSION 1.15.0
+# Google Test
+FetchContent_Declare(
+  googletest
+  URL https://github.com/google/googletest/archive/refs/tags/v1.15.0.zip
+)
+FetchContent_MakeAvailable(googletest)
+
+# glog
+set(BUILD_TESTING OFF CACHE BOOL "Build testing" FORCE)
+set(WITH_GFLAGS OFF CACHE BOOL "Build with gflags" FORCE)
+FetchContent_Declare(
+  glog
+  URL https://github.com/google/glog/archive/refs/tags/v0.7.1.zip
+)
+FetchContent_MakeAvailable(glog)
+
+# Armadillo
+FetchContent_Declare(
+  armadillo
+  GIT_REPOSITORY https://gitlab.com/conradsnicta/armadillo-code.git
+  GIT_TAG 14.0.1
+)
+FetchContent_MakeAvailable(armadillo)
+
+# sentencepiece
+FetchContent_Declare(
+  sentencepiece
+  URL https://github.com/google/sentencepiece/archive/refs/tags/v0.2.0.zip
+)
+FetchContent_MakeAvailable(sentencepiece)
+
+if (LLAMA3_SUPPORT OR QWEN2_SUPPORT OR QWEN3_SUPPORT)
+  # absl
+  set(ABSL_PROPAGATE_CXX_STD ON CACHE BOOL "Propagate CXX std" FORCE)
+  set(ABSL_ENABLE_INSTALL ON CACHE BOOL "Enable install" FORCE)
+  set(BUILD_TESTING OFF CACHE BOOL "Build testing" FORCE)
+  FetchContent_Declare(
+    absl
+    URL https://github.com/abseil/abseil-cpp/archive/refs/tags/20240722.0.zip
   )
+  FetchContent_MakeAvailable(absl)
 
-  CPMAddPackage(
-    NAME glog
-    GITHUB_REPOSITORY google/glog
-    VERSION 0.7.1
-    OPTIONS "BUILD_TESTING Off"
+  # re2
+  FetchContent_Declare(
+    re2
+    URL https://github.com/google/re2/archive/refs/tags/2024-07-02.zip
   )
+  FetchContent_MakeAvailable(re2)
 
-  CPMAddPackage(
-    NAME Armadillo
-    GITLAB_REPOSITORY conradsnicta/armadillo-code
-    GIT_TAG 14.0.1
+  # nlohmann_json
+  FetchContent_Declare(
+    nlohmann_json
+    URL https://github.com/nlohmann/json/archive/refs/tags/v3.11.3.zip
   )
-
-  CPMAddPackage(
-    NAME sentencepiece
-    GITHUB_REPOSITORY google/sentencepiece
-    VERSION 0.2.0
-  )
-  find_package(sentencepiece REQUIRED)
-
-  if (LLAMA3_SUPPORT OR QWEN2_SUPPORT OR QWEN3_SUPPORT)
-    CPMAddPackage(
-        NAME absl
-        GITHUB_REPOSITORY abseil/abseil-cpp
-        GIT_TAG 20240722.0
-        OPTIONS "BUILD_TESTING Off" "ABSL_PROPAGATE_CXX_STD ON" "ABSL_ENABLE_INSTALL ON"
-    )
-    CPMAddPackage(
-        NAME re2
-        GITHUB_REPOSITORY google/re2
-        GIT_TAG 2024-07-02
-    )
-    CPMAddPackage(
-        NAME nlohmann_json
-        GITHUB_REPOSITORY nlohmann/json
-        VERSION 3.11.3
-    )
-  endif()
+  FetchContent_MakeAvailable(nlohmann_json)
 endif()
 
 # ---------------------------------
-find_package(GTest REQUIRED)
-find_package(glog REQUIRED)
-find_package(Armadillo REQUIRED)
+# Removed find_package calls as we are building from source now
 
-# aux_source_directory(kuiper/source/tensor/ DIR_TENSOR)
 aux_source_directory(source/base/ DIR_BASE)
-# aux_source_directory(kuiper/source/op/ DIR_OP)
-# aux_source_directory(kuiper/source/model/ DIR_MODEL)
-# aux_source_directory(kuiper/source/op/kernels/cpu DIR_KERNEL_CPU)
-# aux_source_directory(kuiper/source/op/kernels/cuda DIR_KERNEL_CUDA)
-# aux_source_directory(kuiper/source/op/kernels/ DIR_KERNEL)
-# aux_source_directory(kuiper/source/sampler DIR_SAMPLE)
 
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/lib)
 add_library(llama SHARED ${DIR_BASE})
-#add_library(llama SHARED ${DIR_TENSOR} ${DIR_BASE} ${DIR_OP} ${DIR_KERNEL} ${DIR_MODEL} ${DIR_KERNEL_CPU} ${DIR_KERNEL_CUDA} ${DIR_KERNEL} ${DIR_SAMPLE})
-target_link_libraries(llama sentencepiece glog::glog gtest gtest_main pthread cudart armadillo)
+
+# Link libraries
+target_link_libraries(llama 
+  PUBLIC 
+  sentencepiece 
+  glog::glog 
+  gtest 
+  gtest_main 
+  pthread 
+  cudart 
+  armadillo
+)
+
 target_link_directories(llama PUBLIC ${CMAKE_CUDA_COMPILER_LIBRARY_ROOT}/lib64)
 
-target_include_directories(llama PUBLIC ${glog_INCLUDE_DIR})
-target_include_directories(llama PUBLIC ${PROJECT_SOURCE_DIR}/include)
-target_include_directories(llama PUBLIC ${Armadillo_INCLUDE_DIR})
-target_include_directories(llama PUBLIC ${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES})
+# Include directories
+# Some libraries might not expose include dirs properly via interface, so we add them if needed.
+# glog and gtest usually do. 
+# Armadillo and sentencepiece might need help if not fully modern-cmake compliant in their older versions or specific configs.
 
-if(USE_CPM)
-  # Add sentencepiece include directory
+if(glog_SOURCE_DIR)
+  target_include_directories(llama PUBLIC ${glog_SOURCE_DIR}/src) # Fallback if needed, though glog::glog should handle it
+endif()
+
+if(Armadillo_SOURCE_DIR)
+    target_include_directories(llama PUBLIC ${Armadillo_SOURCE_DIR}/include)
+endif()
+
+if(sentencepiece_SOURCE_DIR)
   target_include_directories(llama PUBLIC ${sentencepiece_SOURCE_DIR}/src)
 endif()
 
+target_include_directories(llama PUBLIC ${PROJECT_SOURCE_DIR}/include)
+target_include_directories(llama PUBLIC ${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES})
+
 set_target_properties(llama PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
-# add_subdirectory(test)
-# add_subdirectory(demo)
-
-
+add_subdirectory(test)
