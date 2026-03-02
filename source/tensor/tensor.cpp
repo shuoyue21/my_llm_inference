@@ -27,7 +27,8 @@ static size_t data_type_size(base::DataType data_type) {
 }
 
 Tensor::Tensor(base::DataType data_type, int32_t dim0, bool need_alloc,
-               std::shared_ptr<base::DeviceAllocator> alloc, void* ptr) {
+               std::shared_ptr<base::DeviceAllocator> alloc, void* ptr)
+    : data_type_(data_type) {
   dims_.push_back(dim0);
   size_ = dim0;
   if (need_alloc && alloc) {
@@ -42,7 +43,8 @@ Tensor::Tensor(base::DataType data_type, int32_t dim0, bool need_alloc,
 }
 
 Tensor::Tensor(base::DataType data_type, int32_t dim0, int32_t dim1, bool need_alloc,
-               std::shared_ptr<base::DeviceAllocator> alloc, void* ptr) {
+               std::shared_ptr<base::DeviceAllocator> alloc, void* ptr)
+    : data_type_(data_type) {
   dims_.push_back(dim0);
   dims_.push_back(dim1);
   size_ = dim0 * dim1;
@@ -58,7 +60,8 @@ Tensor::Tensor(base::DataType data_type, int32_t dim0, int32_t dim1, bool need_a
 }
 
 Tensor::Tensor(base::DataType data_type, int32_t dim0, int32_t dim1, int32_t dim2, bool need_alloc,
-               std::shared_ptr<base::DeviceAllocator> alloc, void* ptr) {
+               std::shared_ptr<base::DeviceAllocator> alloc, void* ptr)
+    : data_type_(data_type) {
   dims_.push_back(dim0);
   dims_.push_back(dim1);
   dims_.push_back(dim2);
@@ -75,7 +78,8 @@ Tensor::Tensor(base::DataType data_type, int32_t dim0, int32_t dim1, int32_t dim
 }
 
 Tensor::Tensor(base::DataType data_type, int32_t dim0, int32_t dim1, int32_t dim2, int32_t dim3,
-               bool need_alloc, std::shared_ptr<base::DeviceAllocator> alloc, void* ptr) {
+               bool need_alloc, std::shared_ptr<base::DeviceAllocator> alloc, void* ptr)
+    : data_type_(data_type) {
   dims_.push_back(dim0);
   dims_.push_back(dim1);
   dims_.push_back(dim2);
@@ -92,7 +96,8 @@ Tensor::Tensor(base::DataType data_type, int32_t dim0, int32_t dim1, int32_t dim
   }
 }
 Tensor::Tensor(base::DataType data_type, std::vector<int32_t> dims, bool need_alloc,
-               std::shared_ptr<base::DeviceAllocator> alloc, void* ptr) {
+               std::shared_ptr<base::DeviceAllocator> alloc, void* ptr)
+    : data_type_(data_type) {
   dims_ = dims;
   size_ = reduce_dimension(dims.begin(), dims.end(), 1);
   if (need_alloc && alloc) {
@@ -146,7 +151,7 @@ bool Tensor::is_empty() const {
 
 void Tensor::init_buffer(std::shared_ptr<base::DeviceAllocator> alloc, base::DataType data_type,
                          bool need_alloc, void* ptr) {
-  if (!alloc and need_alloc) {
+  if (!alloc and !need_alloc) {
     // hyw
     std::shared_ptr<base::Buffer> buffer =
         std::make_shared<base::Buffer>(data_type_size(data_type) * size_, nullptr, ptr, true);
@@ -221,6 +226,7 @@ bool Tensor::assign(std::shared_ptr<base::Buffer> buffer) {
     return false;
   }
   this->buffer_ = buffer;
+  return true;
 }
 
 void Tensor::reset(base::DataType data_type, const std::vector<int32_t>& dims) {
@@ -233,6 +239,13 @@ void Tensor::set_device_type(base::DeviceType device_type) const {
   if (buffer_) {
     buffer_->set_device_type(device_type);
   }
+}
+
+base::DeviceType Tensor::device_type() const {
+  if (buffer_) {
+    return buffer_->device_type();
+  }
+  return base::DeviceType::kDeviceUnknown;
 }
 
 bool Tensor::allocate(std::shared_ptr<base::DeviceAllocator> allocator, bool need_realloc) {
