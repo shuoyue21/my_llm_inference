@@ -1,5 +1,5 @@
-#ifndef KUIPER_INFER_INCLUDE_TICK_HPP_
-#define KUIPER_INFER_INCLUDE_TICK_HPP_
+#ifndef FORWARD_INFER_INCLUDE_TICK_HPP_
+#define FORWARD_INFER_INCLUDE_TICK_HPP_
 #include <chrono>
 #include <iostream>
 
