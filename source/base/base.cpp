@@ -49,7 +49,9 @@ Status InternalError(std::string_view err_msg) { return Status{kInternalError, e
 
 Status KeyHasExits(std::string_view err_msg) { return Status{kKeyValueHasExits, err_msg}; }
 
-Status InvaildArgument(std::string_view err_msg) { return Status{kInvaildArgument, err_msg}; }
+Status InvalidArgument(std::string_view err_msg) {
+  return Status{StatusCode::kInvalidArgument, err_msg};
+}
 }  // namespace error
 
 std::ostream& operator<<(std::ostream& os, const Status& x) {

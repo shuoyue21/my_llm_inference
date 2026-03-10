@@ -83,7 +83,7 @@ enum StatusCode : uint8_t {
   kModeParseError = 3,
   kInternalError = 5,
   kKeyValueHasExits = 6,
-  kInvaildArgument = 7,
+  kInvalidArgument = 7,
 };
 
 enum class TokenizerType {
@@ -140,7 +140,7 @@ Status PathNotVaild(std::string_view err_msg = "");
 Status ModeParseError(std::string_view err_msg = "");
 Status InternalError(std::string_view err_msg = "");
 Status KeyHasExits(std::string_view err_msg = "");
-Status InvaildArgument(std::string_view err_msg = "");
+Status InvalidArgument(std::string_view err_msg = "");
 
 }  // namespace error
 
