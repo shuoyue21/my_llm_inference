@@ -1,0 +1,32 @@
+CompileFlags:
+  Add:
+    # report all errors
+    - "-ferror-limit=0"
+    # ---- make clangd parse .cpp as CUDA ----
+    - "-x"
+    - "cuda"
+    # change these to your local CUDA toolkit path
+    - "--cuda-path=/data1/student/xbh/.local/cuda-13.0"
+    # choose your GPU arch (examples: sm_80, sm_86, sm_89, sm_90)
+
+    # (optional but often helps) use libc++/libstdc++ as you like
+    # - "-stdlib=libstdc++"
+
+  Remove:
+    # strip CUDA fatbin args
+    - "-Xfatbin*"
+    # strip CUDA arch flags
+    - "-gencode*"
+    - "--generate-code*"
+    # strip CUDA flags unknown to clang
+    - "-ccbin*"
+    - "--compiler-options*"
+    - "--expt-extended-lambda"
+    - "--expt-relaxed-constexpr"
+    - "-forward-unknown-to-host-compiler"
+    - "-Werror=cross-execution-space-call"
+
+Diagnostics:
+  Suppress:
+    - "variadic_device_fn"
+    - "attributes_not_allowed"

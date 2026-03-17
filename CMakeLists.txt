@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 3.16)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 # Set the CUDA compiler path or name
-set(CMAKE_CUDA_COMPILER "/usr/local/cuda/bin/nvcc")
+set(CMAKE_CUDA_COMPILER "/data1/student/xbh/.local/cuda-13.0/bin/nvcc")
 
 project(llama_infer CXX CUDA)
 include(cmake/cuda.cmake)
@@ -96,9 +96,10 @@ endif()
 # Removed find_package calls as we are building from source now
 
 aux_source_directory(source/base/ DIR_BASE)
-
+aux_source_directory(source/tensor DIR_TENSOR)
+aux_source_directory(source/op  DIR_OP)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/lib)
-add_library(llama SHARED ${DIR_BASE})
+add_library(llama SHARED ${DIR_BASE} ${DIR_TENSOR} ${DIR_OP})
 
 # Link libraries
 target_link_libraries(llama 
