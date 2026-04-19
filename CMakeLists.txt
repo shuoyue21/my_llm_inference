@@ -3,7 +3,6 @@ cmake_minimum_required(VERSION 3.16)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 # Set the CUDA compiler path or name
-set(CMAKE_CUDA_COMPILER "/data1/student/xbh/.local/cuda-13.0/bin/nvcc")
 
 project(llama_infer CXX CUDA)
 include(cmake/cuda.cmake)
@@ -60,11 +59,13 @@ FetchContent_Declare(
 FetchContent_MakeAvailable(armadillo)
 
 # sentencepiece
+set(CMAKE_POLICY_VERSION_MINIMUM 3.5)
 FetchContent_Declare(
   sentencepiece
   URL https://github.com/google/sentencepiece/archive/refs/tags/v0.2.0.zip
 )
 FetchContent_MakeAvailable(sentencepiece)
+unset(CMAKE_POLICY_VERSION_MINIMUM)
 
 if (LLAMA3_SUPPORT OR QWEN2_SUPPORT OR QWEN3_SUPPORT)
   # absl
@@ -98,8 +99,11 @@ endif()
 aux_source_directory(source/base/ DIR_BASE)
 aux_source_directory(source/tensor DIR_TENSOR)
 aux_source_directory(source/op  DIR_OP)
+aux_source_directory(source/op/kernels/cpu DIR_KERNEL_CPU)
+aux_source_directory(source/op/kernels/cuda DIR_KERNEL_CUDA)
+aux_source_directory(source/op/kernels/ DIR_KERNEL)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/lib)
-add_library(llama SHARED ${DIR_BASE} ${DIR_TENSOR} ${DIR_OP})
+add_library(llama SHARED ${DIR_BASE} ${DIR_TENSOR} ${DIR_OP} ${DIR_KERNEL_CPU} ${DIR_KERNEL_CUDA} ${DIR_KERNEL})
 
 # Link libraries
 target_link_libraries(llama 

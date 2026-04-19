@@ -7,7 +7,7 @@
 #include <string>
 #define UNUSED(expr) \
   do {               \
-    void(expr);      \
+    (void)(expr);    \
   } while (0)
 
 namespace model {

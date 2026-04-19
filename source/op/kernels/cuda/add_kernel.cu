@@ -48,7 +48,7 @@ __global__ void add_kernel_float4_safe(const float* input1, const float* input2,
 }
 
 void add_kernel_cu(const tensor::Tensor& input1, const tensor::Tensor& input2,
-                   tensor::Tensor output, void* stream) {
+                   tensor::Tensor& output, void* stream) {
   CHECK_EQ(input1.is_empty(), false);
   CHECK_EQ(input2.is_empty(), false);
   CHECK_EQ(output.is_empty(), false);

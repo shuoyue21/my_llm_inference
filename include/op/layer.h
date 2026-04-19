@@ -22,6 +22,16 @@ enum class LayerType : uint8_t {
   kLayerSwiGLU = 10,
 };
 
+/*
+继承关系:
+
+BaseLayer
+  └─ Layer
+       ├─ VecAddLayer   // 当前仓库里能看到的具体例子
+       └─ LayerParam
+            └─ Linear / Embedding / RMSNorm / ...  // 设计上这类带权重的层走这支
+*/
+
 class BaseLayer {
  public:
   explicit BaseLayer(base::DeviceType device_type, LayerType layer_type, base::DataType data_type,
@@ -33,10 +43,13 @@ class BaseLayer {
 
   virtual base::Status init() = 0;
 
-  // base_forward
+  // 具体的子类只用实现无参forward函数, 其他重载的forward函数会调用这个无参的forward函数,
+  // 这样就不需要在每个子类中实现多个重载的forward函数了
+
+  //  base_forward 真正的计算入口
   virtual base::Status forward() = 0;
 
-  // 执行计算
+  // 调用入口,设置参数什么的, 最后调用base_forward
   virtual base::Status forward(const tensor::Tensor& input1, const tensor::Tensor& output1) = 0;
 
   virtual base::Status forward(const tensor::Tensor& input1, const tensor::Tensor& input2,
@@ -194,4 +207,4 @@ class LayerParam : public Layer {
   std::vector<tensor::Tensor> weights_;
 };
 }  // namespace op
-#endif  // KUIPER_INCLUDE_OP_LAYER_H_
+#endif  // FORWARD_INCLUDE_OP_LAYER_H_

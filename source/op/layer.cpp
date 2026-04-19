@@ -6,6 +6,7 @@
 #include "base/cuda_config.h"
 
 namespace op {
+// BaseLayer
 BaseLayer::BaseLayer(base::DeviceType device_type, LayerType layer_type, base::DataType data_type,
                      std::string layer_name)
     : device_type_(device_type),
@@ -33,6 +34,7 @@ base::DeviceType BaseLayer::device_type() const { return device_type_; }
 
 void BaseLayer::set_device_type(base::DeviceType device_type) { device_type_ = device_type; }
 
+// Layer
 Layer::Layer(base::DeviceType device_type, LayerType layer_type, std::string layer_name)
     : BaseLayer(device_type, layer_type, base::DataType::kDataTypeFp32, std::move(layer_name)) {}
 
@@ -57,7 +59,6 @@ base::Status Layer::check_tensor(const tensor::Tensor& tensor, base::DeviceType 
 base::Status Layer::check_tensor_with_dim(const tensor::Tensor& tensor,
                                           base::DeviceType device_type, base::DataType data_type,
                                           std::initializer_list<int32_t> dims) const {
-  std::va_list args;
   if (tensor.is_empty()) {
     return base::error::InvalidArgument("The tensor parameter is empty.");
   }
@@ -154,6 +155,57 @@ size_t Layer::input_size() const { return inputs_.size(); }
 
 size_t Layer::output_size() const { return outputs_.size(); }
 
+base::Status Layer::forward(const tensor::Tensor& input1, const tensor::Tensor& output1) {
+  this->set_input(0, input1);
+  this->set_output(0, output1);
+  return this->forward();
+}
+
+base::Status Layer::forward(const tensor::Tensor& input1, const tensor::Tensor& input2,
+                            const tensor::Tensor& output1) {
+  this->set_input(0, input1);
+  this->set_input(1, input2);
+
+  this->set_output(0, output1);
+  return this->forward();
+}
+
+base::Status Layer::forward(const tensor::Tensor& input1, const tensor::Tensor& input2,
+                            const tensor::Tensor& input3, const tensor::Tensor& output1) {
+  this->set_input(0, input1);
+  this->set_input(1, input2);
+  this->set_input(2, input3);
+
+  this->set_output(0, output1);
+  return this->forward();
+}
+
+base::Status Layer::forward(const tensor::Tensor& input1, const tensor::Tensor& input2,
+                            const tensor::Tensor& input3, const tensor::Tensor& input4,
+                            const tensor::Tensor& output1) {
+  this->set_input(0, input1);
+  this->set_input(1, input2);
+  this->set_input(2, input3);
+  this->set_input(3, input4);
+
+  this->set_output(0, output1);
+  return this->forward();
+}
+
+base::Status Layer::forward(const tensor::Tensor& input1, const tensor::Tensor& input2,
+                            const tensor::Tensor& input3, const tensor::Tensor& input4,
+                            const tensor::Tensor& input5, const tensor::Tensor& output1) {
+  this->set_input(0, input1);
+  this->set_input(1, input2);
+  this->set_input(2, input3);
+  this->set_input(3, input4);
+  this->set_input(4, input5);
+
+  this->set_output(0, output1);
+  return this->forward();
+}
+
+// LayerParam
 LayerParam::LayerParam(base::DeviceType device_type, LayerType layer_type, bool is_quant_layer,
                        std::string layer_name)
     : Layer(device_type, layer_type, std::move(layer_name)), is_quant_layer_(is_quant_layer) {}
@@ -250,56 +302,6 @@ int32_t LayerParam::get_scale_num() const {
 void LayerParam::reset_weight_size(size_t size) { weights_.resize(size); }
 
 size_t LayerParam::weight_size() const { return weights_.size(); }
-
-base::Status Layer::forward(const tensor::Tensor& input1, const tensor::Tensor& output1) {
-  this->set_input(0, input1);
-  this->set_output(0, output1);
-  return this->forward();
-}
-
-base::Status Layer::forward(const tensor::Tensor& input1, const tensor::Tensor& input2,
-                            const tensor::Tensor& output1) {
-  this->set_input(0, input1);
-  this->set_input(1, input2);
-
-  this->set_output(0, output1);
-  return this->forward();
-}
-
-base::Status Layer::forward(const tensor::Tensor& input1, const tensor::Tensor& input2,
-                            const tensor::Tensor& input3, const tensor::Tensor& output1) {
-  this->set_input(0, input1);
-  this->set_input(1, input2);
-  this->set_input(2, input3);
-
-  this->set_output(0, output1);
-  return this->forward();
-}
-
-base::Status Layer::forward(const tensor::Tensor& input1, const tensor::Tensor& input2,
-                            const tensor::Tensor& input3, const tensor::Tensor& input4,
-                            const tensor::Tensor& output1) {
-  this->set_input(0, input1);
-  this->set_input(1, input2);
-  this->set_input(2, input3);
-  this->set_input(3, input4);
-
-  this->set_output(0, output1);
-  return this->forward();
-}
-
-base::Status Layer::forward(const tensor::Tensor& input1, const tensor::Tensor& input2,
-                            const tensor::Tensor& input3, const tensor::Tensor& input4,
-                            const tensor::Tensor& input5, const tensor::Tensor& output1) {
-  this->set_input(0, input1);
-  this->set_input(1, input2);
-  this->set_input(2, input3);
-  this->set_input(3, input4);
-  this->set_input(4, input5);
-
-  this->set_output(0, output1);
-  return this->forward();
-}
 
 tensor::Tensor& LayerParam::get_weight(int32_t idx) {
   CHECK_GE(idx, 0);
