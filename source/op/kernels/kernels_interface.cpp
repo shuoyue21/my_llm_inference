@@ -1,9 +1,11 @@
 #include "kernels_interface.h"
 #include <base/base.h>
 #include "cpu/add_kernel.h"
+#include "cpu/emb_kernel.h"
 #include "cpu/matmul_kernel.h"
 #include "cpu/rmsnorm_kernel.hpp"
 #include "cuda/add_kernel.cuh"
+#include "cuda/emb_kernel.cuh"
 #include "cuda/matmul_kernel.cuh"
 #include "cuda/rmsnorm_kernel.cuh"
 namespace kernel {
@@ -54,6 +56,17 @@ MatmulKernelQuant get_matmul_kernel_quant8(base::DeviceType device_type) {
     return matmul_kernel_cu_qint8;
   } else {
     LOG(FATAL) << "Unknown device type for get an matmul kernel.";
+    return nullptr;
+  }
+}
+
+EmbeddingKernel get_emb_kernel(base::DeviceType device_type) {
+  if (device_type == base::DeviceType::kDeviceCPU) {
+    return emb_kernel_normal;
+  } else if (device_type == base::DeviceType::kDeviceCUDA) {
+    return emb_kernel_cu;
+  } else {
+    LOG(FATAL) << "Unknown device type for get an embedding kernel.";
     return nullptr;
   }
 }
