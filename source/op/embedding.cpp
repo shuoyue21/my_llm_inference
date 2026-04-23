@@ -21,8 +21,9 @@ base::Status EmbeddingLayer::check() const {
     return base::error::InvalidArgument("The number of input tensor is greater than seq len.");
   }
 
-  base::Status status = check_tensor_with_dim(input_tensor, base::DeviceType::kDeviceCPU,
-                                              base::DataType::kDataTypeInt32, {token_size});
+  base::Status status =
+      check_tensor_with_dim(input_tensor, base::DeviceType::kDeviceCPU,
+                            base::DataType::kDataTypeInt32, {static_cast<int32_t>(token_size)});
   if (!status) {
     LOG(ERROR) << "The input tensor error in the embedding layer.";
     return status;
