@@ -117,6 +117,10 @@ target_link_libraries(llama
   armadillo
 )
 
+if (LLAMA3_SUPPORT OR QWEN2_SUPPORT OR QWEN3_SUPPORT)
+  target_link_libraries(llama PUBLIC absl::base re2::re2 nlohmann_json::nlohmann_json)
+endif()
+
 target_link_directories(llama PUBLIC ${CMAKE_CUDA_COMPILER_LIBRARY_ROOT}/lib64)
 
 # Include directories
