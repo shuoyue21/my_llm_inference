@@ -9,3 +9,9 @@ Use `scripts/build_variants.py` for portable builds and `scripts/download_models
 All GPU performance measurements must pass `scripts/empty_gpu.py` and use `scripts/benchmark_suite.py`. Never stop another user's GPU process. Compare complete workloads on the same GPU UUID with the same model hashes, precision and token IDs. Keep rejected/contaminated attempts as evidence; do not count them as valid data.
 
 The old machine's S0 results are partial (23/36) and its queue was stopped for migration. Use a new machine-specific stage name and do not overwrite published manifests. See `scripts/model_registry.json` for the full required workload matrix.
+
+## Local user instruction, 2026-10-15
+
+The user explicitly permits the existing WSL `/Xwayland` graphics process. On this local machine freeze every S0/S1/S2/S3 stage with `--gpu-policy scripts/gpu_policies/wsl_desktop.json`. This exception is graphics-only: all external compute clients and other non-exempt graphics clients remain forbidden. With the approved desktop present, aggregate memory/utilization counters are recorded rather than used as idle rejection thresholds. Freeze and compare the same explicit policy for every paired stage. The previous strict-policy local queue was stopped by us; its snapshot has zero accepted cases and is preserved. See `docs/performance/LOCAL_MACHINE.md` and `docs/performance/local-machine/state.json` for the current stage.
+
+Local S0 `S0-Forward-20261015-163413-desktop` is now complete and audited (36 cases / 180 samples on the same GPU). See its `audit.json` and `BASELINE.md`; continue with S1 batched prefill, then S2, then S3. Do not rerun or replace this completed baseline unless its frozen artifacts fail verification.

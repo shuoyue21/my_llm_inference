@@ -176,3 +176,7 @@ python scripts/compare_stages.py --baseline "$LLM_BASELINE_STAGE" \
 ## 给下一台机器上的代理的继续指令
 
 > 先读 AGENTS.md 和 docs/HANDOFF.md。继续原目标：在本机器重建四模型 S0，全部 GPU 性能测试仅在空卡运行，完成 36 场景原始基线后依次实现批量 prefill、CUDA Graph/融合、分页 KV。每阶段冻结版本、校验正确性、跑同样矩阵、记录改善或退化。旧机有 23/36 部分 S0 数据，不能跨 GPU 拼基线；模型和编译产物未进 Git，需要按文档重建。不要把已有集成和上游功能宣称为新优化，也不要缩小到只跑小模型。
+
+## 本机继续运行更新（2026-10-15）
+
+用户最新明确允许 WSL `/Xwayland` 桌面进程。此本机例外优先于上文旧机的严格门槛。四模型固定资产、本机构建和 CPU 对照已通过；本机 S0 使用 `scripts/gpu_policies/wsl_desktop.json` 重新冻结并运行。所有外部计算进程仍禁止，所有阶段使用同一规则。当前工作目录、运行标识、快照和队列状态详见 [LOCAL_MACHINE.md](performance/LOCAL_MACHINE.md)。

@@ -1,7 +1,0 @@
-{
-  "stage": "S0",
-  "phase": "stopped_for_machine_handoff",
-  "pid": 2275588,
-  "time_utc": "2026-10-15T07:49:25.286862+00:00",
-  "reason": "User requested migration to another machine; preserve partial S0 results and resume with a separate host-specific stage."
-}

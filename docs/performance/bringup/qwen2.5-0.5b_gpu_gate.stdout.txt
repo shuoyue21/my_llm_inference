@@ -1,1 +1,0 @@
-{"family": "qwen2", "device": "cuda", "model_dir": "models/qwen2.5-0.5b-instruct", "positions": 19, "vocab_size": 151936, "max_abs_logit_error": 9.465217590332031e-05, "rms_logit_error": 8.58938335385395e-06, "tokenizer_match": true, "generated_tokens_match": true, "text": "1+2等于3。", "source": null}

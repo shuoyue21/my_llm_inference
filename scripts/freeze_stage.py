@@ -2,6 +2,7 @@
 """Freeze each stage's executables and core shared library before collecting benchmarks."""
 import argparse,hashlib,json,shutil,subprocess,re
 from pathlib import Path
+from gpu_policy import normalize_policy
 
 def digest(path):
  h=hashlib.sha256()
@@ -19,13 +20,13 @@ def source_digest():
  return h.hexdigest()
 
 def main():
- p=argparse.ArgumentParser(description=__doc__);p.add_argument('--stage',required=True);p.add_argument('--registry',type=Path,default=Path('scripts/model_registry.json'));a=p.parse_args()
+ p=argparse.ArgumentParser(description=__doc__);p.add_argument('--stage',required=True);p.add_argument('--registry',type=Path,default=Path('scripts/model_registry.json'));p.add_argument('--gpu-policy',type=Path);a=p.parse_args()
  if not re.fullmatch(r'[A-Za-z0-9][A-Za-z0-9_.-]*',a.stage):p.error('Invalid stage name')
  record=Path('docs/performance/stages')/a.stage
  if (record/'manifest.json').exists():raise SystemExit(f'{record}/manifest.json already exists; choose a new machine-specific stage name')
  folder=Path('.artifacts/performance')/a.stage
  if folder.exists():raise SystemExit(f'{folder} already exists; stage snapshots are immutable')
- registry=json.loads(a.registry.read_text());manifest={'stage':a.stage,'source_revision':subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip(),'source_digest':source_digest(),'precision':registry['precision'],'models':[],'workloads':registry['workloads']}
+ registry=json.loads(a.registry.read_text());manifest={'stage':a.stage,'source_revision':subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip(),'source_digest':source_digest(),'precision':registry['precision'],'gpu_policy':normalize_policy(json.loads(a.gpu_policy.read_text()) if a.gpu_policy else None),'models':[],'workloads':registry['workloads']}
  for m in registry['models']:
   out=folder/m['name'];(out/'bin').mkdir(parents=True);(out/'lib').mkdir()
   binary=out/'bin/llama_infer';library=out/'lib/libllama.so'

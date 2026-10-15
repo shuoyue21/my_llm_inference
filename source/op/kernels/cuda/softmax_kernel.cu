@@ -1,3 +1,4 @@
+#include "reduce_compat.cuh"
 #include "softmax_kernel.cuh"
 #include <cub/block/block_reduce.cuh>
 #include <cfloat>
@@ -11,7 +12,7 @@ __global__ void softmax_values(float* x, size_t n) {
   __shared__ float shared;
   float value = -FLT_MAX;
   for (size_t i = threadIdx.x; i < n; i += blockDim.x) value = fmaxf(value, x[i]);
-  value = Reduce(storage).Reduce(value, cub::Max());
+  value = Reduce(storage).Reduce(value, FloatMaximum{});
   if (threadIdx.x == 0) shared = value;
   __syncthreads();
   float maximum = shared;

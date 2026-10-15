@@ -11,3 +11,4 @@ __pycache__/
 .artifacts/
 .venv/
 CMakeUserPresets.json
+/docs/performance/

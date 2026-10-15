@@ -8,7 +8,7 @@ from pathlib import Path
 METRIC_DEFINITION_VERSION = 1
 
 def harness_provenance():
-    names = ['benchmark_suite.py', 'empty_gpu.py', 'measurement_records.py', 'run_on_empty_gpu.py']
+    names = ['benchmark_suite.py', 'empty_gpu.py', 'measurement_records.py', 'run_on_empty_gpu.py', 'gpu_policy.py']
     root = Path(__file__).resolve().parent
     return {'metric_definition_version': METRIC_DEFINITION_VERSION,
             'files': {str(root / name): hashlib.sha256((root / name).read_bytes()).hexdigest() for name in names}}

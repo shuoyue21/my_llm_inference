@@ -29,6 +29,38 @@ class GateTests(unittest.TestCase):
  def test_latency_statistics_use_actual_decode_tokens(self):
   sample=dict(load_ms=1,tokenization_ms=2,ttft_ms=10,prefill_ms=8,decode_ms=6,total_ms=16,decode_tokens_per_second=500,gpu_load_memory_bytes=100,decode_token_ms=[1,2,3])
   result=summarize([sample,sample],4);self.assertEqual(result['tpot_ms']['median'],2);self.assertEqual(result['prefill_tokens_per_second']['median'],500)
+class DesktopPolicyTests(unittest.TestCase):
+ def setUp(self):
+  from gpu_policy import normalize_policy
+  self.monitor=object.__new__(GpuMonitor);self.monitor.max_idle_bytes=128*1024**2;self.monitor.max_idle_util=1
+  self.monitor.policy=normalize_policy({'approved_graphics_process_names':['/Xwayland'],'idle_counter_mode':'observe_only_with_approved_graphics'})
+  self.desktop={'pid':27,'kinds':['graphics'],'name':'/Xwayland','used_memory_bytes':None}
+ def sample(self,processes):return {'processes':processes,'memory_used_bytes':4*1024**3,'gpu_util_percent':10}
+ def test_explicitly_approved_desktop_counters_are_observational(self):
+  self.assertTrue(self.monitor.idle(self.sample([self.desktop])))
+ def test_desktop_name_never_exempts_compute_or_mixed_client(self):
+  for kinds in [['compute'],['graphics','compute']]:
+   self.assertFalse(self.monitor.idle(self.sample([dict(self.desktop,kinds=kinds)])))
+ def test_other_compute_or_graphics_still_rejected(self):
+  for kinds in [['compute'],['graphics']]:
+   outsider={'pid':99,'kinds':kinds,'name':'other','used_memory_bytes':1}
+   self.assertFalse(self.monitor.idle(self.sample([self.desktop,outsider])))
+ def test_counter_exception_requires_exact_approved_desktop(self):
+  self.assertFalse(self.monitor.idle(self.sample([])))
+  self.assertFalse(self.monitor.idle(self.sample([dict(self.desktop,name='/other/Xwayland')])))
+ def test_strict_policy_still_rejects_desktop(self):
+  from gpu_policy import normalize_policy
+  self.monitor.policy=normalize_policy()
+  self.assertFalse(self.monitor.idle(self.sample([self.desktop])))
+ def test_invalid_policy_cannot_disable_checks_accidentally(self):
+  from gpu_policy import normalize_policy
+  for policy in [{'idle_counter_mode':'observe_only_with_approved_graphics'},{'approved_graphics_process_names':'/Xwayland'},{'idle_counter_mode':'ignore_everything'},{'schema_version':True},{'unknown':True}]:
+   with self.assertRaises(ValueError):normalize_policy(policy)
+ def test_explicit_policy_from_environment(self):
+  import json
+  from gpu_policy import policy_from_environment
+  with patch.dict('os.environ',{'LLM_GPU_POLICY_JSON':json.dumps(self.monitor.policy)}):
+   self.assertEqual(policy_from_environment(),self.monitor.policy)
 class PairingTests(unittest.TestCase):
  def record(self,ttft,throughput):
   return {'gpu_uuid':'GPU-a','precision':'fp32','model':'example','prompt_tokens':8,'generated_tokens':32,'cpu_threads':1,'warmups':2,'repeats':5,'samples':[{'prompt_tokens':[1]*8}],
@@ -43,6 +75,11 @@ class PairingTests(unittest.TestCase):
  def test_different_actual_token_sequence_is_rejected(self):
   from compare_stages import compare
   base=self.record(10,100);current=self.record(5,200);current['samples'][0]['prompt_tokens'][0]=2
+  with self.assertRaises(ValueError):compare(base,current)
+ def test_mismatched_gpu_policy_is_not_a_paired_comparison(self):
+  from compare_stages import compare
+  base=self.record(10,100);current=self.record(5,200)
+  current['gpu_policy']={'approved_graphics_process_names':['/Xwayland'],'idle_counter_mode':'observe_only_with_approved_graphics'}
   with self.assertRaises(ValueError):compare(base,current)
 class RecoveryTests(unittest.TestCase):
  def record(self,accepted,valid):

@@ -1,0 +1,9 @@
+{
+  "schema_version": 1,
+  "approved_graphics_process_names": [
+    "/Xwayland"
+  ],
+  "idle_counter_mode": "observe_only_with_approved_graphics",
+  "description": "WSL desktop is permitted. Reject every external compute client and every other non-exempt graphics client; record aggregate counters as observations when the approved desktop is present.",
+  "authorization": "User explicitly allowed the existing /Xwayland desktop process on 2026-10-15."
+}

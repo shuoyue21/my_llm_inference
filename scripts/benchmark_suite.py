@@ -26,10 +26,13 @@ def summarize(samples,prompt_length):
 def main():
  p=argparse.ArgumentParser(description=__doc__);p.add_argument('--stage',required=True);p.add_argument('--gpu-uuid');p.add_argument('--wait-seconds',type=float,default=0);p.add_argument('--model',action='append');p.add_argument('--extra-arg',action='append',default=[]);p.add_argument('--check-only',action='store_true');p.add_argument('--label',default='cumulative');a=p.parse_args()
  root=Path('docs/performance/stages')/a.stage;root.mkdir(parents=True,exist_ok=True)
- monitor=GpuMonitor(a.gpu_uuid)
+ manifest_path=Path('.artifacts/performance')/a.stage/'manifest.json'
+ manifest=json.loads(manifest_path.read_text()) if manifest_path.exists() else None
+ if manifest is None and not a.check_only:raise FileNotFoundError('Freeze the stage before measuring: '+str(manifest_path))
+ monitor=GpuMonitor(a.gpu_uuid,policy=manifest.get('gpu_policy',{}) if manifest else None)
  try:gate=monitor.acquire(a.wait_seconds)
  except NoIdleGpu as error:
-  record={'status':'waiting_for_empty_gpu','time_utc':datetime.datetime.now(datetime.timezone.utc).isoformat(),'reason':str(error),'gpu_observations':error.history}
+  record={'status':'waiting_for_empty_gpu','gpu_policy':monitor.policy,'time_utc':datetime.datetime.now(datetime.timezone.utc).isoformat(),'reason':str(error),'gpu_observations':error.history}
   (root/'waiting.json').write_text(json.dumps(record,indent=2)+'\n');print(json.dumps({'status':record['status'],'gpus_observed':len(error.history)}));return 75
  try:
   print(json.dumps({'status':'empty_gpu_acquired','uuid':monitor.uuid}),flush=True)
@@ -75,7 +78,7 @@ def main():
       if len(samples)!=workload['repeats']:reasons.append('wrong_sample_count')
       elif any(len(s['prompt_tokens'])!=prompt_length or len(s['generated_tokens'])!=output_length or len(s['decode_token_ms'])!=output_length-1 for s in samples):reasons.append('wrong_token_counts')
       elif any(s['prompt_tokens']!=ids or s['generated_tokens']!=samples[0]['generated_tokens'] for s in samples):reasons.append('nondeterministic_tokens')
-     record={'accepted':not reasons,'rejection_reasons':reasons,'stage':a.stage,'source_revision':manifest['source_revision'],'source_digest':manifest['source_digest'],'gpu_uuid':monitor.uuid,'precision':manifest['precision'],'model':model['name'],'prompt_tokens':prompt_length,'generated_tokens':output_length,'warmups':workload['warmups'],'repeats':workload['repeats'],'cpu_threads':workload['cpu_threads'],'harness':harness_provenance(),'command':command,'extra_args':a.extra_arg,'label':a.label,'environment':{k:env[k] for k in ['CUDA_VISIBLE_DEVICES','OPENBLAS_NUM_THREADS','OMP_NUM_THREADS','LD_LIBRARY_PATH']},'platform':platform.platform(),'cpu_affinity':sorted(os.sched_getaffinity(0)),'system_load_average':os.getloadavg(),'driver_version':__import__('pynvml').nvmlSystemGetDriverVersion(),'gate':gate,'before':latest,'monitor':{k:v for k,v in telemetry.items() if k!='samples'},'telemetry_file':str(trace_path),'samples':samples,'time_utc':datetime.datetime.now(datetime.timezone.utc).isoformat()}
+     record={'accepted':not reasons,'rejection_reasons':reasons,'stage':a.stage,'source_revision':manifest['source_revision'],'source_digest':manifest['source_digest'],'gpu_uuid':monitor.uuid,'precision':manifest['precision'],'gpu_policy':monitor.policy,'model':model['name'],'prompt_tokens':prompt_length,'generated_tokens':output_length,'warmups':workload['warmups'],'repeats':workload['repeats'],'cpu_threads':workload['cpu_threads'],'harness':harness_provenance(),'command':command,'extra_args':a.extra_arg,'label':a.label,'environment':{k:env[k] for k in ['CUDA_VISIBLE_DEVICES','OPENBLAS_NUM_THREADS','OMP_NUM_THREADS','LD_LIBRARY_PATH']},'platform':platform.platform(),'cpu_affinity':sorted(os.sched_getaffinity(0)),'system_load_average':os.getloadavg(),'driver_version':__import__('pynvml').nvmlSystemGetDriverVersion(),'gate':gate,'before':latest,'monitor':{k:v for k,v in telemetry.items() if k!='samples'},'telemetry_file':str(trace_path),'samples':samples,'time_utc':datetime.datetime.now(datetime.timezone.utc).isoformat()}
      if record['accepted']:record['metrics']=summarize(samples,prompt_length)
      result_path.write_text(json.dumps(record,indent=2)+'\n')
      if not telemetry['valid']:
@@ -91,6 +94,6 @@ def main():
   (root/'summary.json').write_text(json.dumps({'stage':a.stage,'source_revision':manifest['source_revision'],'source_digest':manifest['source_digest'],'gpu_uuid':monitor.uuid,'completed_cases':completed,'selected_models':a.model,'label':a.label,'extra_args':a.extra_arg,'status':'selected_models_complete' if a.model else 'complete'},indent=2)+'\n')
   return 0
  except NoIdleGpu as error:
-  (root/'waiting.json').write_text(json.dumps({'status':'waiting_for_empty_gpu','gpu_observations':error.history},indent=2)+'\n');print('Waiting for the selected GPU to become empty again',flush=True);return 75
+  (root/'waiting.json').write_text(json.dumps({'status':'waiting_for_empty_gpu','gpu_policy':monitor.policy,'gpu_observations':error.history},indent=2)+'\n');print('Waiting for the selected GPU to become empty again',flush=True);return 75
  finally:monitor.release()
 if __name__=='__main__':raise SystemExit(main())

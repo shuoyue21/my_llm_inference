@@ -10,7 +10,7 @@ if not re.fullmatch(r'[A-Za-z0-9][A-Za-z0-9_.-]*',stage):parser.error('Invalid s
 root=Path('docs/performance/stages')/stage;root.mkdir(parents=True,exist_ok=True)
 manifest=json.loads((Path('.artifacts/performance')/stage/'manifest.json').read_text())
 status_path=root/'runner_status.json'
-env=dict(os.environ,OPENBLAS_NUM_THREADS='1',OMP_NUM_THREADS='1')
+env=dict(os.environ,OPENBLAS_NUM_THREADS='1',OMP_NUM_THREADS='1',LLM_GPU_POLICY_JSON=json.dumps(manifest.get('gpu_policy',{})))
 validation=root/'validation';validation.mkdir(parents=True,exist_ok=True)
 def status(phase,**extra):
  data={'stage':stage,'phase':phase,'pid':os.getpid(),'time_utc':datetime.datetime.now(datetime.timezone.utc).isoformat(),**extra}

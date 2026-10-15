@@ -13,7 +13,7 @@ if a.record.exists():
  if prior.get('status') in ['passed','failed','contaminated']:archive_attempt(a.record)
 try:gate=monitor.acquire(a.wait_seconds)
 except NoIdleGpu as error:
- a.record.write_text(json.dumps({'status':'waiting_for_empty_gpu','purpose':'correctness','gpu_observations':error.history},indent=2)+'\n');print('No empty GPU available');raise SystemExit(75)
+ a.record.write_text(json.dumps({'status':'waiting_for_empty_gpu','gpu_policy':monitor.policy,'purpose':'correctness','gpu_observations':error.history},indent=2)+'\n');print('No empty GPU available');raise SystemExit(75)
 try:
  env=dict(os.environ,CUDA_VISIBLE_DEVICES=monitor.uuid)
  output_path=a.record.with_suffix('.stdout.txt');error_path=a.record.with_suffix('.stderr.txt')
@@ -29,6 +29,6 @@ try:
   watcher.stop()
  report=watcher.report();trace=a.record.with_suffix('.nvml.json.gz')
  with gzip.open(trace,'wt') as f:json.dump(report,f)
- a.record.write_text(json.dumps({'status':('contaminated' if not report['valid'] else 'passed' if code==0 else 'failed'),'harness':harness_provenance(),'purpose':'correctness','gpu_uuid':monitor.uuid,'command':command,'exit_code':code,'gate':gate,'monitor':{k:v for k,v in report.items() if k!='samples'},'telemetry_file':str(trace)},indent=2)+'\n')
+ a.record.write_text(json.dumps({'status':('contaminated' if not report['valid'] else 'passed' if code==0 else 'failed'),'harness':harness_provenance(),'gpu_policy':monitor.policy,'purpose':'correctness','gpu_uuid':monitor.uuid,'command':command,'exit_code':code,'gate':gate,'monitor':{k:v for k,v in report.items() if k!='samples'},'telemetry_file':str(trace)},indent=2)+'\n')
  print(output_path.read_text());raise SystemExit(75 if not report['valid'] else 0 if code==0 else 1)
 finally:monitor.release()
