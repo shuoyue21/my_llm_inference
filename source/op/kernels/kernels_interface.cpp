@@ -1,4 +1,10 @@
 #include "kernels_interface.h"
+#include "cpu/mha_kernel.h"
+#include "cpu/scale_kernel.h"
+#include "cpu/scale_sum_kernel.h"
+#include "cpu/softmax_kernel.h"
+#include "cuda/mha_kernel.cuh"
+#include "cuda/softmax_kernel.cuh"
 #include <base/base.h>
 #include "cpu/add_kernel.h"
 #include "cpu/emb_kernel.h"
@@ -36,6 +42,7 @@ RMSNormKernel get_rmsnorm_kernel(base::DeviceType device_type) {
 }
 
 RMSNormKernelDim get_rmsnorm_dim_kernel(base::DeviceType device_type) {
+  if (device_type == base::DeviceType::kDeviceCPU) return rmsnorm_dim_kernel_cpu;
   if (device_type == base::DeviceType::kDeviceCUDA) {
     return rmsnorm_kernel_cu_dim;
   } else {
@@ -95,5 +102,25 @@ SwigluKernel get_swiglu_kernel(base::DeviceType device_type, void* stream) {
     LOG(FATAL) << "Unknown device type for get a swiglu kernel.";
     return nullptr;
   }
+}
+MHAKernel get_mha_kernel(base::DeviceType type) {
+  if (type == base::DeviceType::kDeviceCPU) return mha_kernel;
+  if (type == base::DeviceType::kDeviceCUDA) return mha_kernel_cu;
+  LOG(FATAL) << "Unsupported attention device";
+  return nullptr;
+}
+ScaleKernel get_scale_kernel(base::DeviceType type) {
+  if (type == base::DeviceType::kDeviceCUDA) return scale_inplace_cu;
+  CHECK(type == base::DeviceType::kDeviceCPU);
+  return scale_inplace_cpu;
+}
+SoftmaxInplaceKernel get_softmax_kernel(base::DeviceType type) {
+  if (type == base::DeviceType::kDeviceCUDA) return softmax_inplace_cu;
+  CHECK(type == base::DeviceType::kDeviceCPU);
+  return softmax_inplace_cpu;
+}
+ScaleSumKernel get_scale_sum_kernel(base::DeviceType type) {
+  CHECK(type == base::DeviceType::kDeviceCPU);
+  return scale_sum_kernel_cpu;
 }
 }  // namespace kernel

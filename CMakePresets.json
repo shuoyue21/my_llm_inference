@@ -1,43 +1,85 @@
 {
-    "version": 3,
-    "configurePresets": [
-        {
-            "name": "default",
-            "displayName": "Default Config",
-            "binaryDir": "${sourceDir}/build",
-            "generator": "Ninja",
-            "cacheVariables": {
-                "CMAKE_BUILD_TYPE": "Debug",
-                "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
-                "CMAKE_C_COMPILER": "/usr/bin/gcc",
-                "CMAKE_CXX_COMPILER": "/usr/bin/g++",
-                "CMAKE_CUDA_COMPILER": "/usr/local/cuda-12.1/bin/nvcc",
-                "LLAMA3_SUPPORT": "ON"
-            }
-        },
-        {
-            "name": "release",
-            "displayName": "Release Config",
-            "binaryDir": "${sourceDir}/build",
-            "generator": "Ninja",
-            "cacheVariables": {
-                "CMAKE_BUILD_TYPE": "Release",
-                "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
-                "CMAKE_C_COMPILER": "/usr/bin/gcc",
-                "CMAKE_CXX_COMPILER": "/usr/bin/g++",
-                "CMAKE_CUDA_COMPILER": "/usr/local/cuda-12.1/bin/nvcc",
-                "LLAMA3_SUPPORT": "ON"
-            }
-        }
-    ],
-    "buildPresets": [
-        {
-            "name": "default",
-            "configurePreset": "default"
-        },
-        {
-            "name": "release",
-            "configurePreset": "release"
-        }
-    ]
+  "version": 3,
+  "configurePresets": [
+    {
+      "name": "default",
+      "displayName": "Default Config",
+      "binaryDir": "${sourceDir}/build",
+      "generator": "Ninja",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
+        "CMAKE_C_COMPILER": "/usr/bin/gcc",
+        "CMAKE_CXX_COMPILER": "/usr/bin/g++",
+        "CMAKE_CUDA_COMPILER": "/usr/local/cuda-12.1/bin/nvcc",
+        "LLAMA3_SUPPORT": "OFF",
+        "QWEN2_SUPPORT": "OFF",
+        "QWEN3_SUPPORT": "OFF",
+        "CMAKE_CUDA_ARCHITECTURES": "89"
+      }
+    },
+    {
+      "name": "release",
+      "displayName": "Release Config",
+      "binaryDir": "${sourceDir}/build-release",
+      "generator": "Ninja",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
+        "CMAKE_C_COMPILER": "/usr/bin/gcc",
+        "CMAKE_CXX_COMPILER": "/usr/bin/g++",
+        "CMAKE_CUDA_COMPILER": "/usr/local/cuda-12.1/bin/nvcc",
+        "LLAMA3_SUPPORT": "OFF",
+        "QWEN2_SUPPORT": "OFF",
+        "QWEN3_SUPPORT": "OFF",
+        "CMAKE_CUDA_ARCHITECTURES": "89"
+      }
+    },
+    {
+      "name": "qwen2",
+      "inherits": "default",
+      "binaryDir": "${sourceDir}/build-qwen2",
+      "cacheVariables": {
+        "QWEN2_SUPPORT": "ON"
+      }
+    },
+    {
+      "name": "llama3",
+      "inherits": "default",
+      "binaryDir": "${sourceDir}/build-llama3",
+      "cacheVariables": {
+        "LLAMA3_SUPPORT": "ON"
+      }
+    },
+    {
+      "name": "qwen3",
+      "inherits": "default",
+      "binaryDir": "${sourceDir}/build-qwen3",
+      "cacheVariables": {
+        "QWEN3_SUPPORT": "ON"
+      }
+    }
+  ],
+  "buildPresets": [
+    {
+      "name": "default",
+      "configurePreset": "default"
+    },
+    {
+      "name": "release",
+      "configurePreset": "release"
+    },
+    {
+      "name": "qwen2",
+      "configurePreset": "qwen2"
+    },
+    {
+      "name": "llama3",
+      "configurePreset": "llama3"
+    },
+    {
+      "name": "qwen3",
+      "configurePreset": "qwen3"
+    }
+  ]
 }

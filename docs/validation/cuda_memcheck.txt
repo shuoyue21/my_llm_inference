@@ -1,0 +1,28 @@
+========= COMPUTE-SANITIZER
+I20261004 00:57:00.119458 139630410977280 test_main.cpp:10] Start Test...
+Note: Google Test filter = runtime_cuda.*:test_rope_cu.*:runtime_cpu.causal*
+[==========] Running 5 tests from 3 test suites.
+[----------] Global test environment set-up.
+[----------] 3 tests from test_rope_cu
+[ RUN      ] test_rope_cu.mha_default_stream
+[       OK ] test_rope_cu.mha_default_stream (474 ms)
+[ RUN      ] test_rope_cu.gqa_stream
+[       OK ] test_rope_cu.gqa_stream (0 ms)
+[ RUN      ] test_rope_cu.partial_block
+[       OK ] test_rope_cu.partial_block (0 ms)
+[----------] 3 tests from test_rope_cu (475 ms total)
+
+[----------] 1 test from runtime_cpu
+[ RUN      ] runtime_cpu.causal_gqa_matches_scalar_reference
+[       OK ] runtime_cpu.causal_gqa_matches_scalar_reference (0 ms)
+[----------] 1 test from runtime_cpu (0 ms total)
+
+[----------] 1 test from runtime_cuda
+[ RUN      ] runtime_cuda.argmax_small_vocab_and_stream
+[       OK ] runtime_cuda.argmax_small_vocab_and_stream (8 ms)
+[----------] 1 test from runtime_cuda (8 ms total)
+
+[----------] Global test environment tear-down
+[==========] 5 tests from 3 test suites ran. (484 ms total)
+[  PASSED  ] 5 tests.
+========= ERROR SUMMARY: 0 errors

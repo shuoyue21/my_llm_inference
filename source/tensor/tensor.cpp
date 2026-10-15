@@ -162,21 +162,18 @@ void Tensor::init_buffer(std::shared_ptr<base::DeviceAllocator> alloc, base::Dat
 }
 
 void Tensor::reshape(const std::vector<int32_t>& dims) {
-  size_t size = reduce_dimension(dims.begin(), dims.end(), 1);
-  // 无数据,只更新维度信息
-  if (!buffer_) {
-    this->dims_ = dims;
-    this->size_ = size;
-    return;
+  for (int32_t dim : dims) CHECK_GE(dim, 0);
+  const size_t size = reduce_dimension(dims.begin(), dims.end(), size_t{1});
+  if (buffer_ && size * base::DataTypeSize(data_type_) > buffer_->byte_size()) {
+    CHECK(buffer_->allocator() != nullptr) << "Cannot grow an external tensor";
+    auto new_buffer = std::make_shared<base::Buffer>(
+        size * base::DataTypeSize(data_type_), buffer_->allocator());
+    CHECK(new_buffer->ptr() != nullptr);
+    new_buffer->copy_from(*buffer_);
+    buffer_ = std::move(new_buffer);
   }
-  // 新维度需要更多的空间:重新分配+复制旧数据
-  if (size > size_) {
-    auto new_buffer = std::make_shared<base::Buffer>(size * base::DataTypeSize(this->data_type_),
-                                                     buffer_->allocator());
-    CHECK(new_buffer->allocate());
-    new_buffer->copy_from(buffer_.get());
-    this->buffer_ = new_buffer;
-  }
+  dims_ = dims;
+  size_ = size;
 }
 
 std::shared_ptr<base::Buffer> Tensor::get_buffer() const { return buffer_; }
@@ -191,7 +188,7 @@ base::DataType Tensor::data_type() const { return data_type_; }
 
 int32_t Tensor::get_dim(int32_t idx) const {
   CHECK_GE(idx, 0);
-  CHECK_NE(idx, dims_.size());
+  CHECK_LT(idx, dims_.size());
   return dims_[idx];
 }
 
@@ -232,7 +229,8 @@ bool Tensor::assign(std::shared_ptr<base::Buffer> buffer) {
 void Tensor::reset(base::DataType data_type, const std::vector<int32_t>& dims) {
   this->data_type_ = data_type;
   this->dims_ = dims;
-  this->size_ = std::accumulate(dims.begin(), dims.end(), 1);
+  this->size_ = reduce_dimension(dims.begin(), dims.end(), size_t{1});
+  buffer_.reset();
 }
 
 void Tensor::set_device_type(base::DeviceType device_type) const {

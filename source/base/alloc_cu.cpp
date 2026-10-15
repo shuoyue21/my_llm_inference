@@ -40,7 +40,7 @@ void* CUDADeviceAllocator::allocate(size_t byte_size) const {
 
   auto& cuda_buffers = cuda_buffers_map_[id];
   for (int i = 0; i < cuda_buffers.size(); ++i) {
-    if (cuda_buffers[i].byte_size > byte_size and !cuda_buffers[i].busy) {
+    if (cuda_buffers[i].byte_size >= byte_size and !cuda_buffers[i].busy) {
       cuda_buffers[i].busy = true;
       no_busy_cnt_[id] -= cuda_buffers[i].byte_size;
       return cuda_buffers[i].data;

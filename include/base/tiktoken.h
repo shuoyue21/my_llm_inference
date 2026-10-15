@@ -2,6 +2,7 @@
 
 #include <re2/re2.h>
 #include "unordered_dense.h"
+#include "unicode.h"
 
 #include <cassert>
 #include <limits>
@@ -115,7 +116,7 @@ class tiktoken {
 			ankerl::unordered_dense::map<std::string, int> special_encoder,
 			const std::string &pattern
 		) {
-			regex_ = std::make_unique<re2::RE2>("(" + pattern + ")");
+			max_number_digits_ = pattern.find("{1,3}") != std::string::npos ? 3 : 1;
 
 			std::string special_pattern;
 			for (const auto &item : special_encoder) {
@@ -187,10 +188,7 @@ class tiktoken {
 
     auto _encode_ordinary_native(const std::string &text) const -> std::vector<int> {
       std::vector<int> ret;
-      re2::StringPiece input(text);
-
-      std::string piece;
-      while (re2::RE2::FindAndConsume(&input, *regex_, &piece)) {
+      for (const auto& piece : unicode_llm_presplit(text, max_number_digits_)) {
         auto iter = encoder_.find(piece);
         if (iter != encoder_.end()) {
           ret.push_back(iter->second);
@@ -212,8 +210,7 @@ class tiktoken {
 
 			while (true) {
 				auto [special, sub_input] = split_with_allowed_special_token(input, allowed_special);
-				std::string piece;
-				while (re2::RE2::FindAndConsume(&sub_input, *regex_, &piece)) {
+				for (const auto& piece : unicode_llm_presplit(std::string(sub_input.data(), sub_input.size()), max_number_digits_)) {
 					auto iter = encoder_.find(piece);
 					if (iter != encoder_.end()) {
 						last_piece_token_len = 1;
@@ -262,7 +259,7 @@ class tiktoken {
 		ankerl::unordered_dense::map<std::string, int> special_tokens_encoder;
 		ankerl::unordered_dense::map<int, std::string> decoder_;
 		ankerl::unordered_dense::map<int, std::string> special_tokens_decoder;
-		std::unique_ptr<re2::RE2> regex_;
+		int max_number_digits_ = 1;
 		std::unique_ptr<re2::RE2> special_regex_;
 };
 

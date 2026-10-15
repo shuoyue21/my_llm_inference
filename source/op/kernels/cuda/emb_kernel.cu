@@ -8,7 +8,7 @@ __global__ void emb_kernel_cu_fp32(int32_t vocab_size, int32_t token_num, int32_
     return;
   }
   int32_t token = input_ptr[token_idx];
-  if (token >= vocab_size) {
+  if (token < 0 || token >= vocab_size) {
     return;
   }
 
@@ -22,7 +22,7 @@ __global__ void emb_kernel_cu_fp32(int32_t vocab_size, int32_t token_num, int32_
 
 void emb_kernel_cu(const tensor::Tensor& input, const tensor::Tensor& weight,
                    tensor::Tensor& output, int32_t vocab_size, void* stream) {
-  tensor::Tensor input_cu;
+  tensor::Tensor input_cu = input;
   if (input.device_type() != base::DeviceType::kDeviceCUDA) {
     input_cu = input.clone();
     input_cu.to_cuda();
@@ -32,7 +32,7 @@ void emb_kernel_cu(const tensor::Tensor& input, const tensor::Tensor& weight,
   CHECK(weight.device_type() == output.device_type());
   CHECK(output.device_type() == base::DeviceType::kDeviceCUDA);
 
-  constexpr int32_t max_seq_len = 512;
+  const int32_t max_seq_len = input_num;
   constexpr int32_t thread_num = 128;
   int32_t* in_ptr = input_cu.ptr<int32_t>();
   float* wei_ptr = const_cast<float*>(weight.ptr<float>());
@@ -45,5 +45,7 @@ void emb_kernel_cu(const tensor::Tensor& input, const tensor::Tensor& weight,
     emb_kernel_cu_fp32<<<max_seq_len, thread_num>>>(vocab_size, input_num, weight_dim, in_ptr,
                                                     wei_ptr, out_ptr);
   }
+  if (input.device_type() != base::DeviceType::kDeviceCUDA)
+    CHECK_EQ(cudaStreamSynchronize(static_cast<cudaStream_t>(stream)), cudaSuccess);
 }
 }  // namespace kernel

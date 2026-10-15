@@ -1,0 +1,1 @@
+PASS: real generation, CPU/CUDA agreement , BOS-only prompt, zero generation, invalid CLI, context overflow and malformed checkpoints

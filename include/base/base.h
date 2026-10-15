@@ -31,6 +31,12 @@ enum class ModelBufferType {
 
   kSinCache = 17,
   kCosCache = 18,
+  kScoreStorage = kScoresStorge,
+  kW1Output = kW10output,
+  kW2Output = kW20output,
+  kW3Output = kW30output,
+  kFFNRMSNorm = kFFRMSNorm,
+  kForwardOutputCPU = kForwardOutputCpu,
 };
 }
 
@@ -138,6 +144,8 @@ Status Success(std::string_view err_msg = "");
 Status FunctionNotImplement(std::string_view err_msg = "");
 Status PathNotVaild(std::string_view err_msg = "");
 Status ModeParseError(std::string_view err_msg = "");
+inline Status PathNotValid(std::string_view msg = "") { return PathNotVaild(msg); }
+inline Status ModelParseError(std::string_view msg = "") { return ModeParseError(msg); }
 Status InternalError(std::string_view err_msg = "");
 Status KeyHasExits(std::string_view err_msg = "");
 Status InvalidArgument(std::string_view err_msg = "");

@@ -1,0 +1,26 @@
+{
+  "models/stories15M.bin": {
+    "bytes": 60816028,
+    "sha256": "cd590644d963867a2b6e5a1107f51fad663c41d79c149fbecbbb1f95fa81f49a"
+  },
+  "models/tokenizer.model": {
+    "bytes": 499723,
+    "sha256": "9e556afd44213b6bd1be2b850ebbbd98f5481437a8021afaf58ee7fb1818d347"
+  },
+  "models/qwen2.5-0.5b-instruct/model.safetensors": {
+    "bytes": 988097824,
+    "sha256": "fdf756fa7fcbe7404d5c60e26bff1a0c8b8aa1f72ced49e7dd0210fe288fb7fe"
+  },
+  "models/qwen2.5-0.5b-instruct/config.json": {
+    "bytes": 659,
+    "sha256": "18e18afcaccafade98daf13a54092927904649e1dd4eba8299ab717d5d94ff45"
+  },
+  "models/qwen2.5-0.5b-instruct/tokenizer.json": {
+    "bytes": 7031645,
+    "sha256": "c0382117ea329cdf097041132f6d735924b697924d6f6fc3945713e96ce87539"
+  },
+  "models/qwen2.5-0.5b-instruct/model.bin": {
+    "bytes": 1976655388,
+    "sha256": "8e82192505506744416f5762badd18d0b6a96bfec85e413b0054a225dcb28ca7"
+  }
+}

@@ -3,3 +3,8 @@ build
 .cache
 lib
 .vscode
+/build-*/
+/models/
+/log/
+__pycache__/
+*.pyc

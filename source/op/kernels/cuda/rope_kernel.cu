@@ -10,7 +10,7 @@ __global__ void rope_kernel_cu_fp32(int pos, int dim, int kv_dim, int head_size,
   int num_heads = dim / head_size;
   int head_pair_count = head_size / 2;
   int total_pairs = num_heads * head_pair_count;
-  if (idx > total_pairs) {
+  if (idx >= total_pairs) {
     return;
   }
 
@@ -56,7 +56,7 @@ __global__ void rope_kernel_cu_fp32(int pos, int dim, int kv_dim, int head_size,
   int num_heads = dim / head_size;
   int head_pair_count = head_size / 2;
   int total_pairs = num_heads * head_pair_count;
-  if (idx > total_pairs) {
+  if (idx >= total_pairs) {
     return;
   }
 

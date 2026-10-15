@@ -15,7 +15,6 @@ void swiglu_kernel_cpu(const tensor::Tensor& input1, const tensor::Tensor& input
   arma::fvec input2_vec(const_cast<float*>(input2.ptr<float>()), input2.size(), false, true);
   arma::fvec output_vec(output.ptr<float>(), output.size(), false, true);
 
-  input1_vec %= (1.0f / (1.0f + arma::exp(-input1_vec)));
-  output_vec = input1_vec % input2_vec;
+  output_vec = (input1_vec / (1.0f + arma::exp(-input1_vec))) % input2_vec;
 }
 }  // namespace kernel

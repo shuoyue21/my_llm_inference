@@ -17,28 +17,16 @@ void matmul_kernel_cpu(const tensor::Tensor& input, const tensor::Tensor& weight
   const float* weight_ptr = weight.ptr<float>();
   float* output_ptr = output.ptr<float>();
 
-  int32_t input_dim0 = 1;
-  int32_t input_dim1 = 1;
-
-  if (input.dims_size() == 1) {
-    input_dim1 = input.get_dim(0);
-  } else if (input.dims_size() == 2) {
-    input_dim0 = input.get_dim(0);
-    input_dim1 = input.get_dim(1);
-  } else {
-    LOG(FATAL) << "The input tensor has a wrong dims size in the matmul kernel.";
-  }
-
+  CHECK_EQ(input.dims_size(), 1);
   CHECK_EQ(weight.dims_size(), 2);
-  int32_t weight_dim0 = weight.get_dim(0);
-  int32_t weight_dim1 = weight.get_dim(1);
-  CHECK_EQ(input_dim1, weight_dim0);
-
-  CHECK_EQ(output.size(), weight_dim0 * input_dim1);
-
-  arma::fmat input_mat(const_cast<float*>(input_ptr), input_dim1, input_dim0, false, true);
-  arma::fmat weight_mat(const_cast<float*>(weight_ptr), weight_dim1, weight_dim0, false, true);
-  arma::fmat output_mat(output_ptr, weight_dim1, input_dim0, false, true);
-  output_mat = ((input_mat * weight_mat)) * scale;
+  const int32_t rows = weight.get_dim(0);
+  const int32_t cols = weight.get_dim(1);
+  CHECK_EQ(input.size(), cols);
+  CHECK_EQ(output.size(), rows);
+  // Checkpoints store W as row-major [out_features, in_features].
+  arma::fvec x(const_cast<float*>(input_ptr), cols, false, true);
+  arma::fmat w(const_cast<float*>(weight_ptr), cols, rows, false, true);
+  arma::fvec y(output_ptr, rows, false, true);
+  y = scale * (w.t() * x);
 }
 }  // namespace kernel

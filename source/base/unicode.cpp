@@ -342,7 +342,7 @@ static std::vector<size_t> unicode_regex_split_custom_gpt2(const std::string & t
 }
 
 // LLAMA3 system regex: "(?i:'s|'t|'re|'ve|'m|'ll|'d)|[^\r\n\p{L}\p{N}]?\p{L}+|\p{N}{1,3}| ?[^\s\p{L}\p{N}]+[\r\n]*|\s*[\r\n]+|\s+(?!\S)|\s+"
-static std::vector<size_t> unicode_regex_split_custom_llama3(const std::string & text, const std::vector<size_t> & offsets) {
+static std::vector<size_t> unicode_regex_split_custom_llama3(const std::string & text, const std::vector<size_t> & offsets, size_t max_number_digits = 3) {
     std::vector<size_t> bpe_offsets; // store the offset of each word
     bpe_offsets.reserve(offsets.size()); // Reserve memory for the approximate size
 
@@ -419,7 +419,7 @@ static std::vector<size_t> unicode_regex_split_custom_llama3(const std::string &
             if (flags.is_number) {
                 size_t ini = pos;
                 while (_get_flags(pos).is_number) {
-                    if (++pos - ini >= 3 ) {
+                    if (++pos - ini >= max_number_digits) {
                         _add_token(pos);
                         ini = pos;
                     }
@@ -816,4 +816,20 @@ std::vector<std::string> unicode_regex_split(const std::string & text, const std
     }
 
     return unicode_byte_encoding_process(bpe_words);
+}
+
+// Raw UTF-8 pieces for Llama/Qwen BPE. Preserve lookahead whitespace semantics
+// without approximating them using RE2 (which does not support lookahead).
+std::vector<std::string> unicode_llm_presplit(const std::string& text, int max_number_digits) {
+    const auto codepoints = unicode_cpts_from_utf8(text);
+    auto offsets = unicode_regex_split_custom_llama3(text, {codepoints.size()}, max_number_digits);
+    std::vector<std::string> result;
+    size_t begin = 0;
+    for (auto count : offsets) {
+        std::string piece;
+        for (size_t i = begin; i < begin + count; ++i) piece += unicode_cpt_to_utf8(codepoints[i]);
+        result.push_back(std::move(piece));
+        begin += count;
+    }
+    return result;
 }

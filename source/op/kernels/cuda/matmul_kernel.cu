@@ -5,7 +5,7 @@
 namespace kernel {
 template <int THREAD_PER_BLOCK, int ROW_PER_BLOCK>
 __global__ void matmul_kernel_cu_fp32(const float* input, const float* weight, float* output, int M,
-                                      int K) {
+                                      int K, float scale) {
   __shared__ float sdata[THREAD_PER_BLOCK];
   unsigned int tid = threadIdx.x;
 
@@ -16,7 +16,7 @@ __global__ void matmul_kernel_cu_fp32(const float* input, const float* weight, f
   }
 
   constexpr int pack_size = 4;
-  const int pack_num = M / pack_size;
+  const int pack_num = (M % pack_size == 0) ? M / pack_size : 0;
   const int pack_off = pack_size * pack_num;
 
 #pragma unroll
@@ -47,7 +47,7 @@ __global__ void matmul_kernel_cu_fp32(const float* input, const float* weight, f
     __syncthreads();
 
     if (tid == 0) {
-      output[p] = part_sum;
+      output[p] = part_sum * scale;
     }
     __syncthreads();
   }
@@ -101,10 +101,10 @@ void matmul_kernel_cu(const tensor::Tensor& input, const tensor::Tensor& weight,
   CHECK_EQ(M, input.get_dim(0));
   if (config && config->stream) {
     matmul_kernel_cu_fp32<128, 1><<<K, 128, 0, config->stream>>>(
-        input.ptr<float>(), weight.ptr<float>(), output.ptr<float>(), M, K);
+        input.ptr<float>(), weight.ptr<float>(), output.ptr<float>(), M, K, scale);
   } else {
     matmul_kernel_cu_fp32<128, 1>
-        <<<K, 128>>>(input.ptr<float>(), weight.ptr<float>(), output.ptr<float>(), M, K);
+        <<<K, 128>>>(input.ptr<float>(), weight.ptr<float>(), output.ptr<float>(), M, K, scale);
   }
 }
 

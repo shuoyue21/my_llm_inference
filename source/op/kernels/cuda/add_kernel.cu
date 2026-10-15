@@ -59,10 +59,10 @@ void add_kernel_cu(const tensor::Tensor& input1, const tensor::Tensor& input2,
   int32_t block_num = (size + thread_num - 1) / thread_num;
   if (stream) {
     cudaStream_t stream_ = static_cast<CUstream_st*>(stream);
-    add_kernel_grid_stride<<<thread_num, block_num, 0, stream_>>>(
+    add_kernel_grid_stride<<<block_num, thread_num, 0, stream_>>>(
         size, input1.ptr<const float>(), input2.ptr<const float>(), output.ptr<float>());
   } else {
-    add_kernel_grid_stride<<<thread_num, block_num>>>(
+    add_kernel_grid_stride<<<block_num, thread_num>>>(
         size, input1.ptr<const float>(), input2.ptr<const float>(), output.ptr<float>());
   }
 }

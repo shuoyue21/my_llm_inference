@@ -4,7 +4,7 @@
 int main(int argc, char* argv[]) {
   testing::InitGoogleTest(&argc, argv);
   google::InitGoogleLogging("Kuiper");
-  FLAGS_log_dir = "./log/";
+  FLAGS_logtostderr = true;
   FLAGS_alsologtostderr = true;
 
   LOG(INFO) << "Start Test...\n";

@@ -1,0 +1,1 @@
+{"device": "cuda", "positions": 19, "max_abs_logit_error": 9.465217590332031e-05, "tokenizer_cases_match": 6, "generated_tokens_match": true, "text": "1+2等于"}

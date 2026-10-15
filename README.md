@@ -1,0 +1,105 @@
+# my_llm_inference
+
+基于 [KuiperLLama](https://github.com/zjhellofss/KuiperLLama) 的 C++20 / CUDA 推理项目。当前已跑通 **Llama 风格 TinyStories 15M 和 Qwen2.5-0.5B-Instruct 的 FP32、单请求、贪心生成**，含权重加载、分词、模型前向、GQA/KV Cache、EOS/长度停止和数值对照。
+
+本轮保留原项目的 Tensor/Buffer/Layer，接入上游缺失模块，修正阻塞推理的实现，并新增 CLI、独立验证与性能基准。来源见 [UPSTREAM](docs/UPSTREAM.md)；结果见 [VALIDATION](docs/VALIDATION.md)；后续亮点见 [AI Infra 改进清单](docs/IMPROVEMENTS.md)。
+
+## 立即运行（当前工作区已构建并下载模型）
+
+```bash
+# Llama 风格小模型，约 61 MB
+OPENBLAS_NUM_THREADS=1 ./build/demo/llama_infer \
+  models/stories15M.bin models/tokenizer.model \
+  --device cpu --prompt 'Once upon a time' --max-new-tokens 64
+
+# 同模型 CUDA 路径
+./build/demo/llama_infer models/stories15M.bin models/tokenizer.model \
+  --device cuda --prompt 'Once upon a time' --max-new-tokens 64 --json
+
+# Qwen 中文指令生成（封装了该模型要求的聊天模板）
+bash scripts/run_qwen_chat.sh '请用一句话解释什么是大模型推理。'
+# CPU 路径
+QWEN_DEVICE=cpu OPENBLAS_NUM_THREADS=1 bash scripts/run_qwen_chat.sh '你好'
+```
+
+`--json` 输出生成文本、prompt/generated token IDs、停止原因、模型加载耗时、TTFT、decode 吞吐。文本不包含 prompt 和终止标记；generated token IDs 保留 EOS，便于对齐。`--dump-logits FILE` 保存每次 forward 的 FP32 logits，仅用于正确性诊断，会干扰性能计时。
+
+## 从源码构建
+
+需要 GCC 的 C++20 支持、CMake >= 3.18、Ninja、CUDA Toolkit、BLAS/LAPACK 开发库。**当前 CPU 执行也链接 CUDA runtime，因此编译 CPU 路径仍需要 Toolkit，但 CPU 运行不需要可用 GPU。** 依赖通过 CMake FetchContent 下载。
+
+```bash
+cmake --preset default
+cmake --build --preset default --target llama_infer test_llm -j 8
+```
+
+预设按本机配置使用 `/usr/local/cuda-12.1/bin/nvcc` 和架构 `89`。其他机器覆盖为实际路径/架构：
+
+```bash
+cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release \
+  -DCMAKE_CUDA_COMPILER=/path/to/nvcc -DCMAKE_CUDA_ARCHITECTURES=YOUR_ARCH \
+  -DLLAMA3_SUPPORT=OFF -DQWEN2_SUPPORT=OFF -DQWEN3_SUPPORT=OFF
+cmake --build build --target llama_infer test_llm -j 8
+```
+
+默认构建使用 Llama2 的 SentencePiece / RoPE，适配 TinyStories legacy FP32 文件。Qwen2 使用独立构建目录：
+
+```bash
+cmake --preset qwen2
+cmake --build --preset qwen2 --target llama_infer test_llm -j 8
+```
+
+`llama3`、`qwen3` 预设保留上游模型变体，**本轮未用对应真实权重完成验证**。模型变体的 RoPE、RMSNorm epsilon、tokenizer 与导出格式不同，每个构建只允许打开一个模型选项。不要用 Qwen/Llama3 构建读取 TinyStories 权重。
+
+## 模型下载与转换
+
+```bash
+bash scripts/download_smoke_model.sh
+# 下载约 1 GB BF16 权重；导出后的 FP32 文件约 2 GB
+bash scripts/download_qwen2.sh
+```
+
+模型目录被 Git 忽略。Qwen 脚本固定了官方仓库 revision；直接从 safetensors 转换，仅需 NumPy，无需安装 transformers，也不重新加载训练模型。导出上下文默认设为 2048，以控制预分配 KV Cache 的占用；这不改变权重，可在导出命令中设定其他受支持长度。
+
+上游导出工具保留在 `tools/`。注意运行时读取的是 **legacy 自定义 bin**，不能直接读取 Hugging Face safetensors/GGUF，也不接受上游所有带新版本头的 bin 文件。上游 INT8 路径保留，但本轮没有完成端到端量化质量验证；Qwen3 INT8 明确拒绝。
+
+## 验证
+
+```bash
+# 不需要 GPU 的测试；提供模型变量才能运行真实模型重复请求测试
+export LLAMA_TEST_MODEL="$PWD/models/stories15M.bin"
+export LLAMA_TEST_TOKENIZER="$PWD/models/tokenizer.model"
+OPENBLAS_NUM_THREADS=1 ctest --test-dir build -R '^cpu_unit$' --output-on-failure
+
+# 有 GPU 时运行完整算子/运行时测试
+OPENBLAS_NUM_THREADS=1 ./build/test/test_llm
+python3 scripts/smoke_test.py --cuda
+
+# 逐步 logits / greedy token 对照，依赖 numpy + torch
+OPENBLAS_NUM_THREADS=1 python3 scripts/verify_reference.py --device cpu
+OPENBLAS_NUM_THREADS=1 python3 scripts/verify_reference.py --device cuda
+
+# Qwen 对照原始 safetensors 和官方 tokenizer，另需 safetensors + tokenizers
+OPENBLAS_NUM_THREADS=1 python3 scripts/verify_qwen2.py --device cuda
+```
+
+当前机器的附加验证依赖安装在被忽略的 `build/validation-deps`，没有修改全局 Python 环境；这里可使用 `PYTHONPATH="$PWD/build/validation-deps"` 执行 Qwen 验证。
+
+```bash
+# 每个后端先预热一次，再执行三次并保留原始数据
+python3 scripts/benchmark.py
+# 输出 docs/benchmark_baseline.json
+```
+
+吞吐指标排除模型加载与 prefill，decode tokens/s 使用首个生成 token 之后的 token 数 / decode 时间。TTFT 包含分词和 prompt 计算，不包含模型加载。这是单请求基线，不是并发服务吞吐。服务器有其他 GPU 负载，短序列和小模型的数字不能外推到大模型或生产环境。
+
+## 代码入口
+
+- `demo/main.cpp`：CLI、模型选择、JSON 和诊断输出。
+- `source/runtime/generation.cpp`：完整自回归生成循环。
+- `source/model/`：模型加载、层组装、KV Cache、前向。
+- `source/op/kernels/`：CPU/CUDA 算子及调度。
+- `scripts/verify_reference.py` / `verify_qwen2.py`：独立数值对照。
+- `docs/IMPROVEMENTS.md`：拟议改进、工作量、指标和简历表述边界。
+
+当前仍是单请求推理基线；没有 continuous batching、分页 KV、共享前缀缓存和正式服务调度。这些是下一轮可自行实现并通过实验展示的 AI Infra 亮点。

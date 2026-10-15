@@ -56,8 +56,11 @@ int32_t SpeEncodeLayer::vocab_size() const {
 }
 
 #if defined(LLAMA3_SUPPORT) || defined(QWEN2_SUPPORT) || defined(QWEN3_SUPPORT)
-static const std::string PAT_STR =
+static const std::string QWEN_PAT_STR =
     R"((?i:'s|'t|'re|'ve|'m|'ll|'d)|[^\r\n\p{L}\p{N}]?\p{L}+|\p{N}| ?[^\s\p{L}\p{N}]+[\r\n]*|\s*[\r\n]+|\s+(?:$|[^\S])|\s+)";
+static const std::string LLAMA_PAT_STR =
+    R"((?i:'s|'t|'re|'ve|'m|'ll|'d)|[^\r\n\p{L}\p{N}]?\p{L}+|\p{N}{1,3}| ?[^\s\p{L}\p{N}]+[\r\n]*|\s*[\r\n]+|\s+(?!\S)|\s+)";
+
 
 BpeEncodeLayer::BpeEncodeLayer(std::string token_model_path, bool has_bos, bool has_eos)
     : EncodeLayerBase(std::move(token_model_path), has_bos, has_eos) {
@@ -100,15 +103,12 @@ BpeEncodeLayer::BpeEncodeLayer(std::string token_model_path, bool has_bos, bool 
   stop_token2_ = special_tokens["<|eot_id|>"];
 
   num_token_ = encoder.size() + special_tokens.size();
-  tiktoken_ = std::make_unique<tiktoken::tiktoken>(encoder, special_tokens, PAT_STR);
+  tiktoken_ = std::make_unique<tiktoken::tiktoken>(encoder, special_tokens, LLAMA_PAT_STR);
 }
 
 std::vector<int32_t> BpeEncodeLayer::encode(const std::string& sentence) const {
   CHECK(this->tiktoken_ != nullptr);
-  std::map<std::string, std::string> replacements;
-  replacements[" "] = "Ġ";
-  std::string s = absl::StrReplaceAll(sentence, replacements);
-  auto input_ids = this->tiktoken_->encode(s);
+  auto input_ids = this->tiktoken_->encode(sentence);
 
   if (has_bos_) {
     input_ids.insert(input_ids.begin(), bos_id_);
@@ -119,15 +119,11 @@ std::vector<int32_t> BpeEncodeLayer::encode(const std::string& sentence) const {
   return input_ids;
 }
 
-std::string BpeEncodeLayer::decode(int32_t token_id) const { return ""; }
+std::string BpeEncodeLayer::decode(int32_t token_id) const { return decode(std::vector<int32_t>{token_id}); }
 
 std::string BpeEncodeLayer::decode(const std::vector<int32_t>& token_ids) const {
   CHECK(this->tiktoken_ != nullptr);
-  auto s = tiktoken_->decode(token_ids);
-  std::map<std::string, std::string> reverse_replacements;
-  reverse_replacements["Ġ"] = " ";
-  const std::string& sentence = absl::StrReplaceAll(s, reverse_replacements);
-  return sentence;
+  return tiktoken_->decode(token_ids);
 }
 
 bool BpeEncodeLayer::is_sentence_ending(int32_t token_id) const {
@@ -176,7 +172,7 @@ QwenEncodeLayer::QwenEncodeLayer(std::string token_model_path, bool has_bos, boo
   stop_token2_ = special_tokens["<|endoftext|>"];
 
   num_token_ = encoder.size() + special_tokens.size();
-  tiktoken_ = std::make_unique<tiktoken::tiktoken>(encoder, special_tokens, PAT_STR);
+  tiktoken_ = std::make_unique<tiktoken::tiktoken>(encoder, special_tokens, QWEN_PAT_STR);
 }
 
 #endif

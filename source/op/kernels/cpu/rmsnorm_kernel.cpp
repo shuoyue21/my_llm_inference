@@ -31,4 +31,16 @@ void rmsnorm_kernel_cpu(const tensor::Tensor& input, const tensor::Tensor& weigh
   const float rsqrt = 1.f / std::sqrt(mean);
   out_tensor = wei_tensor % (rsqrt * in_tensor);
 }
+void rmsnorm_dim_kernel_cpu(const tensor::Tensor& input, const tensor::Tensor& weight,
+                            tensor::Tensor& output, int32_t dim, void* stream) {
+  CHECK_GT(dim, 0);
+  CHECK_EQ(input.size() % dim, 0);
+  CHECK_EQ(output.size(), input.size());
+  for (size_t offset = 0; offset < input.size(); offset += dim) {
+    tensor::Tensor row(base::DataType::kDataTypeFp32, dim, false, nullptr, const_cast<float*>(input.ptr<float>(offset)));
+    tensor::Tensor out(base::DataType::kDataTypeFp32, dim, false, nullptr, output.ptr<float>(offset));
+    row.set_device_type(base::DeviceType::kDeviceCPU); out.set_device_type(base::DeviceType::kDeviceCPU);
+    rmsnorm_kernel_cpu(row, weight, out, stream);
+  }
+}
 }  // namespace kernel
