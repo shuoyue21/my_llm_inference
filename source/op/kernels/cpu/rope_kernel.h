@@ -10,3 +10,8 @@ void rope_kernel_cpu(int32_t dim, int32_t kv_dim, int32_t head_size, const tenso
                      void* stream);
 }  // namespace kernel
 #endif  // LLAMA_INFER_ROPE_KERNEL_H
+
+#include "model/config.h"
+namespace kernel {
+void sin_cos_cache_calc_cpu_config(int, int, float*, float*, const model::RopeConfig&);
+}

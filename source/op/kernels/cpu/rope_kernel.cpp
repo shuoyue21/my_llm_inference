@@ -123,3 +123,21 @@ void rope_kernel_cpu(int32_t dim, int32_t kv_dim, int32_t head_size, const tenso
 }
 #endif
 }  // namespace kernel
+namespace kernel {
+void sin_cos_cache_calc_cpu_config(int head_size, int seq, float* sin_cache, float* cos_cache, const model::RopeConfig& cfg) {
+  for (int i=0; i<head_size; ++i) {
+    float frequency = 1.f / std::pow(cfg.theta, float(i)/head_size);
+    if (cfg.factor > 1.f) {
+      float wavelength = 6.283185307179586f / frequency;
+      float low = float(cfg.original_context)/cfg.low_freq_factor;
+      float high = float(cfg.original_context)/cfg.high_freq_factor;
+      if (wavelength > low) frequency /= cfg.factor;
+      else if (wavelength >= high) {
+        float smooth=(float(cfg.original_context)/wavelength-cfg.low_freq_factor)/(cfg.high_freq_factor-cfg.low_freq_factor);
+        frequency=(1.f-smooth)*frequency/cfg.factor+smooth*frequency;
+      }
+    }
+    for (int pos=0;pos<seq;++pos) {sin_cache[pos*head_size+i]=std::sin(pos*frequency);cos_cache[pos*head_size+i]=std::cos(pos*frequency);}
+  }
+}
+}

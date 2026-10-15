@@ -102,3 +102,15 @@ TEST(runtime_cpu, generation_repeated_request_and_boundaries) {
   EXPECT_FALSE(bool(runtime::generate(model,"hello",options,second)));
 }
 #endif
+
+#include "source/op/kernels/cpu/rope_kernel.h"
+TEST(runtime_cpu, configured_llama3_rope_scaling) {
+  const int head=128,seq=18;std::vector<float> sin_cache(head*seq),cos_cache(head*seq);
+  model::RopeConfig cfg;cfg.theta=500000;cfg.factor=32;cfg.low_freq_factor=1;cfg.high_freq_factor=4;cfg.original_context=8192;
+  kernel::sin_cos_cache_calc_cpu_config(head,seq,sin_cache.data(),cos_cache.data(),cfg);
+  // High frequency is unchanged, very low frequency has exactly factor-32 scaling.
+  EXPECT_NEAR(sin_cache[17*head],std::sin(17.f),1e-6);
+  const double lowest=std::pow(500000.,-126./128.)/32.;
+  EXPECT_NEAR(sin_cache[17*head+126],std::sin(17*lowest),1e-8);
+  EXPECT_FLOAT_EQ(cos_cache[126],1.f);
+}

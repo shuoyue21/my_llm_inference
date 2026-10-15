@@ -49,7 +49,7 @@ cmake --preset qwen2
 cmake --build --preset qwen2 --target llama_infer test_llm -j 8
 ```
 
-`llama3`、`qwen3` 预设保留上游模型变体，**本轮未用对应真实权重完成验证**。模型变体的 RoPE、RMSNorm epsilon、tokenizer 与导出格式不同，每个构建只允许打开一个模型选项。不要用 Qwen/Llama3 构建读取 TinyStories 权重。
+`llama3`、`qwen3` 已增加真实权重的 CPU 数值验证；GPU 验证正在等待空卡，进展见 [分阶段实验](docs/performance/BRINGUP.md)。模型变体的 RoPE、RMSNorm epsilon、tokenizer 与导出格式不同，每个构建只允许打开一个模型选项。不要用 Qwen/Llama3 构建读取 TinyStories 权重。
 
 ## 模型下载与转换
 
@@ -103,3 +103,22 @@ python3 scripts/benchmark.py
 - `docs/IMPROVEMENTS.md`：拟议改进、工作量、指标和简历表述边界。
 
 当前仍是单请求推理基线；没有 continuous batching、分页 KV、共享前缀缓存和正式服务调度。这些是下一轮可自行实现并通过实验展示的 AI Infra 亮点。
+
+## 分阶段优化与空卡实验
+
+当前目标依次为：跑通 Qwen3/Llama3、采集 S0 原始基线、实现批量 prefill、实现 CUDA Graph/算子融合、实现分页 KV。完整计划和模型/长度矩阵见 [PLAN](docs/performance/PLAN.md)、[BRINGUP](docs/performance/BRINGUP.md)。旧的共享 GPU 数字只作历史记录。
+
+```bash
+# 全部变体使用同一套代码构建（复用本机缓存依赖）
+python3 scripts/build_variants.py
+# 新模型原始 safetensors -> FP32 legacy bin，保留正确 RoPE 配置
+python3 scripts/export_hf.py models/qwen3-0.6b models/qwen3-0.6b/model.bin --context 2048
+python3 scripts/export_hf.py models/llama3.2-1b-instruct models/llama3.2-1b-instruct/model.bin --context 2048
+# 原始权重 CPU 数值校验
+PYTHONPATH="$PWD/build/validation-deps" OPENBLAS_NUM_THREADS=1 python3 scripts/verify_hf.py \
+  --binary build-qwen3/demo/llama_infer --model-dir models/qwen3-0.6b --device cpu
+# 空卡门槛与阶段基线（快照由 freeze_stage.py 创建，阶段不可覆盖）
+PYTHONPATH="$PWD/build/validation-deps" python3 scripts/benchmark_suite.py --stage S0 --wait-seconds 30
+```
+
+空卡监控依赖 `nvidia-ml-py`，已安装在 `build/validation-deps`。无空卡时退出码 75，并保存占用证据；不会在繁忙 GPU 上降级测速。GPU 原始性能通过 `benchmark_suite.py` 收集，旧 `benchmark.py` 仅保留 CPU 用途。

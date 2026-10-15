@@ -132,14 +132,14 @@ base::Status Qwen3Model::init(base::DeviceType device_type) {
   }
   init_mem();
   if (device_type_ == base::DeviceType::kDeviceCPU) {
-    kernel::sin_cos_cache_calc_cpu(config_->head_size_, config_->seq_len_,
+    kernel::sin_cos_cache_calc_cpu_config(config_->head_size_, config_->seq_len_,
                                    get_buffer(ModelBufferType::kSinCache).ptr<float>(),
-                                   get_buffer(ModelBufferType::kCosCache).ptr<float>());
+                                   get_buffer(ModelBufferType::kCosCache).ptr<float>(), config_->rope);
   } else {
     CHECK_NE(cuda_config_, nullptr);
-    kernel::sin_cos_cache_calc_cu(config_->head_size_, config_->seq_len_,
+    kernel::sin_cos_cache_calc_cu_config(config_->head_size_, config_->seq_len_,
                                   get_buffer(ModelBufferType::kSinCache),
-                                  get_buffer(ModelBufferType::kCosCache), cuda_config_->stream);
+                                  get_buffer(ModelBufferType::kCosCache), cuda_config_->stream, config_->rope);
   }
 
   sampler_ = std::make_unique<sampler::ArgmaxSampler>(device_type_);
@@ -487,7 +487,7 @@ void Qwen3Model::attention_qkv(int32_t layer_idx, const tensor::Tensor& pos_tens
   // query norm
   auto query_norm = qwen_layers_->rmsnorm_layers_.at(layer_idx + 2 * config_->layer_num_ + 1);
   query.reshape({(int32_t)query.size() / config_->head_size_, config_->head_size_});
-  query_norm->forward(query, query);
+  STATUS_CHECK(query_norm->forward(query, query));
   query.reshape({(int32_t)query.size()});
 
   // key
@@ -498,7 +498,7 @@ void Qwen3Model::attention_qkv(int32_t layer_idx, const tensor::Tensor& pos_tens
   // key norm
   auto key_norm = qwen_layers_->rmsnorm_layers_.at(layer_idx + 3 * config_->layer_num_ + 1);
   key.reshape({(int32_t)key.size() / config_->head_size_, config_->head_size_});
-  key_norm->forward(key, key);
+  STATUS_CHECK(key_norm->forward(key, key));
   key.reshape({(int32_t)key.size()});
 
   // value

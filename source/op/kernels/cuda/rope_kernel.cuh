@@ -11,3 +11,8 @@ void sin_cos_cache_calc_cu(int head_size, int max_seq_len, const tensor::Tensor&
 
 }  // namespace kernel
 #endif  // ROPE_KERNEL_CU_CUH
+
+#include "model/config.h"
+namespace kernel {
+void sin_cos_cache_calc_cu_config(int, int, const tensor::Tensor&, const tensor::Tensor&, cudaStream_t, const model::RopeConfig&);
+}

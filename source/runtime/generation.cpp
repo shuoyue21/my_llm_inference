@@ -8,7 +8,9 @@ base::Status generate(const model::Model& model, const std::string& prompt,
   result = {};
   if (options.max_new_tokens < 0)
     return base::error::InvalidArgument("max-new-tokens must be nonnegative");
-  result.prompt_tokens = model.encode(prompt);
+  result.prompt_tokens = options.prompt_token_ids.empty() ? model.encode(prompt) : options.prompt_token_ids;
+  auto prefill_start = Clock::now();
+  result.tokenization_ms = std::chrono::duration<double,std::milli>(prefill_start-start).count();
   if (result.prompt_tokens.empty())
     return base::error::InvalidArgument("Prompt produced no tokens");
   if (result.prompt_tokens.size() > static_cast<size_t>(model.context_length()) ||
@@ -22,6 +24,7 @@ base::Status generate(const model::Model& model, const std::string& prompt,
   const int prompt_size = static_cast<int>(result.prompt_tokens.size());
   auto pos_tensor = model.get_buffer(model::ModelBufferType::kInputPos);
   int next = -1;
+  auto previous_token_time = start;
   // Every prompt token, including a one-token prompt, runs through forward once.
   for (int pos = 0; options.max_new_tokens > 0 &&
                     pos < prompt_size + options.max_new_tokens - 1; ++pos) {
@@ -37,11 +40,16 @@ base::Status generate(const model::Model& model, const std::string& prompt,
     if (next < 0 || next >= model.vocab_size())
       return base::error::InternalError("Sampler returned an invalid token");
     result.generated_tokens.push_back(next);
+    auto token_time = Clock::now();
+    if (result.generated_tokens.size() > 1)
+      result.decode_token_ms.push_back(std::chrono::duration<double,std::milli>(token_time-previous_token_time).count());
+    previous_token_time = token_time;
     if (result.generated_tokens.size() == 1) {
-      first_token_time = Clock::now();
+      first_token_time = token_time;
+      result.prefill_ms = std::chrono::duration<double,std::milli>(token_time-prefill_start).count();
       result.ttft_ms = std::chrono::duration<double, std::milli>(first_token_time - start).count();
     }
-    if (model.is_sentence_ending(next)) { result.stop_reason = "eos"; break; }
+    if (!options.ignore_eos && model.is_sentence_ending(next)) { result.stop_reason = "eos"; break; }
   }
   auto end = Clock::now();
   result.total_ms = std::chrono::duration<double, std::milli>(end - start).count();

@@ -5,6 +5,10 @@
 #include <unistd.h>
 #include <limits>
 #include <memory>
+#include <fstream>
+#if defined(LLAMA3_SUPPORT) || defined(QWEN2_SUPPORT) || defined(QWEN3_SUPPORT)
+#include <nlohmann/json.hpp>
+#endif
 namespace model {
 Model::Model(base::TokenizerType tokenizer_type, base::ModelType model_type, std::string token_path,
              std::string model_path, bool is_quant_model)
@@ -75,6 +79,14 @@ base::Status Model::read_model_file() {
     if (count > (raw->file_size - header_bytes) / sizeof(float))
       return error::ModelParseError("Checkpoint weight data is truncated or format is incompatible");
   }
+#else
+  {
+    const uint64_t d=config_->hidden_dim_, a=config_->dim_, kv=config_->kv_dim_;
+    const uint64_t l=config_->layer_num_, h=config_->immediate_dim_, v=config_->vocab_size_;
+    const uint64_t count=(2*l+1)*d+2*v*d+2*l*d*a+2*l*d*kv+2*l*config_->head_size_+3*l*d*h;
+    if(count>(raw->file_size-header_bytes)/sizeof(float))
+      return error::ModelParseError("Qwen3 checkpoint is truncated");
+  }
 #endif
   raw->data = mmap(nullptr, raw->file_size, PROT_READ, MAP_PRIVATE, raw->fd, 0);
   if (raw->data == MAP_FAILED) return error::ModelParseError("Cannot mmap checkpoint");
@@ -107,6 +119,7 @@ base::Status Model::generate_model_infos(const ModelConfig& config) const {
   config_->kv_mul_ = config.head_num / config.kv_head_num;
   config_->head_size_ = config.dim / config.head_num;
 #if defined(QWEN3_SUPPORT)
+  if (config.immediate_dim_ <= 0) return base::error::ModelParseError("Invalid intermediate size");
   config_->immediate_dim_ = config.immediate_dim_;
 #endif
   if (config.vocab_size > 0) {
@@ -122,6 +135,44 @@ base::Status Model::generate_model_infos(const ModelConfig& config) const {
   //       "Vocabulary size mismatch between the model file and the token list.");
   // }
   config_->vocab_size_ = std::abs(config.vocab_size);
+#if defined(LLAMA3_SUPPORT)
+  config_->rope.theta = 500000.f;
+#elif defined(QWEN2_SUPPORT) || defined(QWEN3_SUPPORT)
+  config_->rope.theta = 1000000.f;
+#endif
+#if defined(LLAMA3_SUPPORT) || defined(QWEN2_SUPPORT) || defined(QWEN3_SUPPORT)
+  std::ifstream metadata(model_path_ + ".json");
+  if (metadata) {
+    try {
+      auto value = nlohmann::json::parse(metadata);
+      config_->rope.theta = value.value("rope_theta", config_->rope.theta);
+      float expected_eps =
+#if defined(LLAMA3_SUPPORT)
+          1e-5f;
+#else
+          1e-6f;
+#endif
+      if (std::abs(value.value("rms_norm_eps", expected_eps) - expected_eps) > 1e-10f)
+        return base::error::ModelParseError("RMSNorm epsilon does not match this model build");
+      if (value.contains("rope_scaling") && !value["rope_scaling"].is_null()) {
+        const auto& scaling = value["rope_scaling"];
+        if (scaling.value("rope_type", scaling.value("type", std::string{})) != "llama3")
+          return base::error::ModelParseError("Unsupported RoPE scaling type");
+        config_->rope.factor = scaling.at("factor");
+        config_->rope.low_freq_factor = scaling.at("low_freq_factor");
+        config_->rope.high_freq_factor = scaling.at("high_freq_factor");
+        config_->rope.original_context = scaling.at("original_max_position_embeddings");
+      }
+      if (config_->rope.theta <= 0 || config_->rope.factor < 1 ||
+          config_->rope.low_freq_factor <= 0 || config_->rope.high_freq_factor <= config_->rope.low_freq_factor ||
+          config_->rope.original_context <= 0)
+        return base::error::ModelParseError("Invalid RoPE configuration");
+    } catch (const std::exception& error) {
+      return base::error::ModelParseError(std::string("Invalid runtime metadata: ") + error.what());
+    }
+  }
+#endif
+
   return base::error::Success();
 }
 

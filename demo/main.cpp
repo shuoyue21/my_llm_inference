@@ -6,6 +6,7 @@
 #include "model/qwen3.h"
 #endif
 #include <cuda_runtime_api.h>
+#include <algorithm>
 #include <chrono>
 #include <fstream>
 #include <iomanip>
@@ -17,14 +18,29 @@ namespace {
 std::string json_string(const std::string& s) {
   std::ostringstream out;
   out << '"';
-  for (unsigned char c : s) {
-    if (c == '"' || c == '\\') out << '\\' << c;
-    else if (c < 0x20) out << "\\u" << std::hex << std::setw(4) << std::setfill('0') << int(c) << std::dec;
-    else out << c;
+  for (size_t i=0;i<s.size();) {
+    unsigned char c=s[i];
+    if (c < 0x80) {
+      if (c == '"' || c == '\\') out << '\\' << c;
+      else if (c < 0x20) out << "\\u" << std::hex << std::setw(4) << std::setfill('0') << int(c) << std::dec;
+      else out << c;
+      ++i;
+      continue;
+    }
+    size_t length=c>=0xC2 && c<=0xDF ? 2 : c>=0xE0 && c<=0xEF ? 3 : c>=0xF0 && c<=0xF4 ? 4 : 0;
+    bool valid=length && i+length<=s.size();
+    for(size_t j=1;valid && j<length;++j)valid=(static_cast<unsigned char>(s[i+j])&0xC0)==0x80;
+    if(valid && length>=3) {
+      unsigned char second=s[i+1];
+      valid=!(c==0xE0 && second<0xA0) && !(c==0xED && second>=0xA0) && !(c==0xF0 && second<0x90) && !(c==0xF4 && second>=0x90);
+    }
+    if(valid) {out.write(s.data()+i,length);i+=length;}
+    else {out << "\\ufffd"; ++i;}
   }
   out << '"';
   return out.str();
 }
+
 void ids(const std::vector<int32_t>& values) {
   std::cout << '[';
   for (size_t i = 0; i < values.size(); ++i) { if (i) std::cout << ','; std::cout << values[i]; }
@@ -33,6 +49,7 @@ void ids(const std::vector<int32_t>& values) {
 void usage() {
   std::cout << "Usage: llama_infer CHECKPOINT TOKENIZER [--device cpu|cuda] [--prompt TEXT]\n"
                "       [--max-new-tokens N] [--json] [--quant] [--dump-logits FILE]\n"
+               "       [--prompt-ids FILE] [--ignore-eos] [--warmup N] [--repeat N]\n"
                "Greedy decoding. JSON reports generated text, token IDs and separate TTFT/decode metrics.\n";
 }
 }
@@ -44,18 +61,27 @@ int main(int argc, char** argv) {
   try {
     std::string prompt = "Once upon a time", device = "cpu", dump_path;
     bool json = false, quant = false;
+    int repeats = 1, warmups = 0;
+    std::string prompt_ids_path;
     runtime::GenerationOptions options;
     for (int i = 3; i < argc; ++i) {
       std::string flag = argv[i];
       if (flag == "--json") { json = true; continue; }
       if (flag == "--quant") { quant = true; continue; }
-      if (flag != "--prompt" && flag != "--device" && flag != "--max-new-tokens" && flag != "--dump-logits")
+      if (flag == "--ignore-eos") { options.ignore_eos = true; continue; }
+      if (flag != "--prompt" && flag != "--device" && flag != "--max-new-tokens" && flag != "--dump-logits" && flag != "--prompt-ids" && flag != "--repeat" && flag != "--warmup")
         throw std::invalid_argument("Unknown option: " + flag);
       if (++i == argc) throw std::invalid_argument("Missing value for " + flag);
       std::string value = argv[i];
       if (flag == "--prompt") prompt = value;
       else if (flag == "--device") device = value;
       else if (flag == "--dump-logits") dump_path = value;
+      else if (flag == "--prompt-ids") prompt_ids_path = value;
+      else if (flag == "--repeat" || flag == "--warmup") {
+        size_t end = 0; int number = std::stoi(value,&end);
+        if (end!=value.size() || number<0 || (flag=="--repeat" && number==0)) throw std::invalid_argument("Invalid iteration count");
+        if (flag=="--repeat") repeats=number; else warmups=number;
+      }
       else { size_t end = 0; options.max_new_tokens = std::stoi(value, &end);
              if (end != value.size() || options.max_new_tokens < 0) throw std::invalid_argument("Invalid max-new-tokens"); }
     }
@@ -68,6 +94,15 @@ int main(int argc, char** argv) {
     }
     if (!std::ifstream(argv[1]).good() || !std::ifstream(argv[2]).good())
       throw std::invalid_argument("Checkpoint or tokenizer file does not exist");
+    if (!prompt_ids_path.empty()) {
+      std::ifstream file(prompt_ids_path);
+      if (!file) throw std::invalid_argument("Cannot open prompt token file");
+      int32_t token;
+      while (file >> token) options.prompt_token_ids.push_back(token);
+      if (!file.eof() || options.prompt_token_ids.empty()) throw std::invalid_argument("Invalid prompt token file");
+    }
+    size_t gpu_free_before=0,gpu_total=0,gpu_free_after=0;
+    if(device=="cuda") cudaMemGetInfo(&gpu_free_before,&gpu_total);
     auto load_start = std::chrono::steady_clock::now();
     std::unique_ptr<model::Model> model;
 #if defined(QWEN3_SUPPORT)
@@ -102,9 +137,13 @@ int main(int argc, char** argv) {
         if (!dump) throw std::runtime_error("Failed to write logits");
       };
     }
+    if(device=="cuda") cudaMemGetInfo(&gpu_free_after,&gpu_total);
+    if(!dump_path.empty() && (repeats!=1 || warmups!=0)) throw std::invalid_argument("Logit dump requires one iteration and no warmup");
+    for (int iteration=-warmups; iteration<repeats; ++iteration) {
     runtime::GenerationResult result;
     status = runtime::generate(*model, prompt, options, result);
     if (!status) throw std::runtime_error(status.get_err_msg());
+    if (iteration<0) continue;
     if (json) {
       std::cout << std::setprecision(9) << "{\"device\":" << json_string(device)
                 << ",\"text\":" << json_string(result.text) << ",\"prompt_tokens\":";
@@ -112,14 +151,22 @@ int main(int argc, char** argv) {
       std::cout << ",\"generated_tokens\":"; ids(result.generated_tokens);
       std::cout << ",\"stop_reason\":" << json_string(result.stop_reason)
                 << ",\"context_length\":" << model->context_length()
+                << ",\"iteration\":" << iteration
+                << ",\"warmup_requests\":" << warmups
+                << ",\"tokenization_ms\":" << result.tokenization_ms
+                << ",\"prefill_ms\":" << result.prefill_ms
+                << ",\"gpu_load_memory_bytes\":" << (gpu_free_before>=gpu_free_after ? gpu_free_before-gpu_free_after : 0)
                 << ",\"load_ms\":" << load_ms << ",\"ttft_ms\":" << result.ttft_ms
                 << ",\"decode_ms\":" << result.decode_ms << ",\"total_ms\":" << result.total_ms
-                << ",\"decode_tokens_per_second\":" << result.decode_tokens_per_second << "}\n";
+                << ",\"decode_tokens_per_second\":" << result.decode_tokens_per_second << ",\"decode_token_ms\":[";
+      for(size_t i=0;i<result.decode_token_ms.size();++i) {if(i)std::cout<<',';std::cout<<result.decode_token_ms[i];}
+      std::cout << "]}\n";
     } else {
       std::cout << result.text << '\n';
       std::cerr << "prompt_tokens=" << result.prompt_tokens.size() << " generated_tokens=" << result.generated_tokens.size()
                 << " stop=" << result.stop_reason << " load_ms=" << load_ms << " ttft_ms=" << result.ttft_ms
                 << " decode_tokens/s=" << result.decode_tokens_per_second << '\n';
+    }
     }
     return 0;
   } catch (const std::exception& error) { std::cerr << "Error: " << error.what() << '\n'; return 1; }

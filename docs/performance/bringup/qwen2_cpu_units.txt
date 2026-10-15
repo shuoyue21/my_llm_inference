@@ -1,0 +1,43 @@
+I20261015 15:29:42.577643 139641783316480 test_main.cpp:10] Start Test...
+Note: Google Test filter = runtime_cpu.*:test_buffer.allocate*:test_buffer.use_external:test_tensor.clone_cpu:test_tensor.init*:test_tensor.assign1
+[==========] Running 13 tests from 3 test suites.
+[----------] Global test environment set-up.
+[----------] 3 tests from test_buffer
+[ RUN      ] test_buffer.allocate
+[       OK ] test_buffer.allocate (0 ms)
+[ RUN      ] test_buffer.allocate2
+I20261015 15:29:42.577833 139641783316480 test_buffer.cpp:22] HERE
+[       OK ] test_buffer.allocate2 (0 ms)
+[ RUN      ] test_buffer.use_external
+[       OK ] test_buffer.use_external (0 ms)
+[----------] 3 tests from test_buffer (0 ms total)
+
+[----------] 5 tests from test_tensor
+[ RUN      ] test_tensor.clone_cpu
+[       OK ] test_tensor.clone_cpu (0 ms)
+[ RUN      ] test_tensor.init1
+[       OK ] test_tensor.init1 (0 ms)
+[ RUN      ] test_tensor.init3
+[       OK ] test_tensor.init3 (0 ms)
+[ RUN      ] test_tensor.init2
+[       OK ] test_tensor.init2 (0 ms)
+[ RUN      ] test_tensor.assign1
+[       OK ] test_tensor.assign1 (0 ms)
+[----------] 5 tests from test_tensor (0 ms total)
+
+[----------] 5 tests from runtime_cpu
+[ RUN      ] runtime_cpu.non_square_matmul
+[       OK ] runtime_cpu.non_square_matmul (0 ms)
+[ RUN      ] runtime_cpu.reshape_preserves_data_and_metadata
+[       OK ] runtime_cpu.reshape_preserves_data_and_metadata (0 ms)
+[ RUN      ] runtime_cpu.argmax_tie_and_negative
+[       OK ] runtime_cpu.argmax_tie_and_negative (0 ms)
+[ RUN      ] runtime_cpu.causal_gqa_matches_scalar_reference
+[       OK ] runtime_cpu.causal_gqa_matches_scalar_reference (117 ms)
+[ RUN      ] runtime_cpu.configured_llama3_rope_scaling
+[       OK ] runtime_cpu.configured_llama3_rope_scaling (0 ms)
+[----------] 5 tests from runtime_cpu (117 ms total)
+
+[----------] Global test environment tear-down
+[==========] 13 tests from 3 test suites ran. (118 ms total)
+[  PASSED  ] 13 tests.

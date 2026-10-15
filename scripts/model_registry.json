@@ -1,0 +1,11 @@
+{
+  "schema_version": 1,
+  "precision": "fp32",
+  "models": [
+    {"name":"tinystories15m","family":"llama2","build":"build","checkpoint":"models/stories15M.bin","tokenizer":"models/tokenizer.model","context":256,"seed_tokens":[9038,2501,263,931,29892,727,471,263,2217,7826]},
+    {"name":"qwen2.5-0.5b","family":"qwen2","build":"build-qwen2","checkpoint":"models/qwen2.5-0.5b-instruct/model.bin","tokenizer":"models/qwen2.5-0.5b-instruct/tokenizer.json","hf_dir":"models/qwen2.5-0.5b-instruct","context":2048,"seed_tokens":[9707,220,16,17,18,198,104811,220,7975,2257]},
+    {"name":"qwen3-0.6b","family":"qwen3","build":"build-qwen3","checkpoint":"models/qwen3-0.6b/model.bin","tokenizer":"models/qwen3-0.6b/tokenizer.json","hf_dir":"models/qwen3-0.6b","context":2048,"seed_tokens":[9707,220,16,17,18,198,104811,220,7975,2257]},
+    {"name":"llama3.2-1b","family":"llama3","build":"build-llama3","checkpoint":"models/llama3.2-1b-instruct/model.bin","tokenizer":"models/llama3.2-1b-instruct/tokenizer.json","hf_dir":"models/llama3.2-1b-instruct","context":2048,"seed_tokens":[791,6864,315,9822,374,220,16,17,18,198]}
+  ],
+  "workloads": {"prompt_tokens":[8,32,128,512,1536],"generated_tokens":[32,128],"warmups":2,"repeats":5,"cpu_threads":1,"ignore_eos":true}
+}

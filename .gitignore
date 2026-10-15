@@ -8,3 +8,4 @@ lib
 /log/
 __pycache__/
 *.pyc
+.artifacts/

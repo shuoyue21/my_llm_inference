@@ -130,14 +130,14 @@ base::Status Qwen2Model::init(base::DeviceType device_type) {
   }
   init_mem();
   if (device_type_ == base::DeviceType::kDeviceCPU) {
-    kernel::sin_cos_cache_calc_cpu(config_->head_size_, config_->seq_len_,
+    kernel::sin_cos_cache_calc_cpu_config(config_->head_size_, config_->seq_len_,
                                    get_buffer(ModelBufferType::kSinCache).ptr<float>(),
-                                   get_buffer(ModelBufferType::kCosCache).ptr<float>());
+                                   get_buffer(ModelBufferType::kCosCache).ptr<float>(), config_->rope);
   } else {
     CHECK_NE(cuda_config_, nullptr);
-    kernel::sin_cos_cache_calc_cu(config_->head_size_, config_->seq_len_,
+    kernel::sin_cos_cache_calc_cu_config(config_->head_size_, config_->seq_len_,
                                   get_buffer(ModelBufferType::kSinCache),
-                                  get_buffer(ModelBufferType::kCosCache), cuda_config_->stream);
+                                  get_buffer(ModelBufferType::kCosCache), cuda_config_->stream, config_->rope);
   }
 
   sampler_ = std::make_unique<sampler::ArgmaxSampler>(device_type_);

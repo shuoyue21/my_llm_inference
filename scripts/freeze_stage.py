@@ -1,0 +1,48 @@
+#!/usr/bin/env python3
+"""Freeze each stage's executables and core shared library before collecting benchmarks."""
+import argparse,hashlib,json,shutil,subprocess,re
+from pathlib import Path
+
+def digest(path):
+ h=hashlib.sha256()
+ with open(path,'rb') as f:
+  for chunk in iter(lambda:f.read(8*1024**2),b''):h.update(chunk)
+ return h.hexdigest()
+
+def source_digest():
+ files=[]
+ for folder in ['include','source','demo','test','scripts']:
+  files.extend(p for p in Path(folder).rglob('*') if p.is_file() and '__pycache__' not in p.parts)
+ files.extend(Path(p) for p in ['CMakeLists.txt','CMakePresets.json'])
+ h=hashlib.sha256()
+ for p in sorted(files):h.update(str(p).encode()+b'\0'+p.read_bytes())
+ return h.hexdigest()
+
+def main():
+ p=argparse.ArgumentParser(description=__doc__);p.add_argument('--stage',required=True);p.add_argument('--registry',type=Path,default=Path('scripts/model_registry.json'));a=p.parse_args()
+ folder=Path('.artifacts/performance')/a.stage
+ if folder.exists():raise SystemExit(f'{folder} already exists; stage snapshots are immutable')
+ registry=json.loads(a.registry.read_text());manifest={'stage':a.stage,'source_revision':subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip(),'source_digest':source_digest(),'precision':registry['precision'],'models':[],'workloads':registry['workloads']}
+ for m in registry['models']:
+  out=folder/m['name'];(out/'bin').mkdir(parents=True);(out/'lib').mkdir()
+  binary=out/'bin/llama_infer';library=out/'lib/libllama.so'
+  shutil.copy2(Path(m['build'])/'demo/llama_infer',binary);shutil.copy2(Path(m['build'])/'lib/libllama.so',library)
+  unit=out/'bin/test_llm';shutil.copy2(Path(m['build'])/'test/test_llm',unit)
+  item=dict(m,binary=str(binary),library=str(library),test_binary=str(unit),test_binary_sha256=digest(unit),binary_sha256=digest(binary),library_sha256=digest(library))
+  dependencies={}
+  linked=subprocess.check_output(['ldd',str(Path(m['build'])/'demo/llama_infer')],text=True)
+  for soname,original in re.findall(r'\s*(\S+) => (/\S+)',linked):
+   source=Path(original)
+   if source.resolve().is_relative_to(Path.cwd()):
+    destination=out/'lib'/soname
+    if destination!=library:shutil.copy2(source,destination)
+    dependencies[str(destination)]={'sha256':digest(destination),'original':str(source)}
+  item['dependencies']=dependencies
+  item['artifacts']={}
+  for file in [Path(m['checkpoint']),Path(m['tokenizer']),Path(m['checkpoint']+'.json')]:
+   if file.exists():item['artifacts'][str(file)]={'sha256':digest(file),'bytes':file.stat().st_size}
+  manifest['models'].append(item)
+ folder.mkdir(parents=True,exist_ok=True);(folder/'manifest.json').write_text(json.dumps(manifest,indent=2)+'\n')
+ record=Path('docs/performance/stages')/a.stage;record.mkdir(parents=True,exist_ok=True);(record/'manifest.json').write_text(json.dumps(manifest,indent=2)+'\n')
+ print(json.dumps({'stage':a.stage,'revision':manifest['source_revision'],'source_digest':manifest['source_digest'],'snapshot':str(folder),'models':len(manifest['models'])}))
+if __name__=='__main__':main()

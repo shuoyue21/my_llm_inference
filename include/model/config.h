@@ -15,7 +15,16 @@ struct ModelConfig {
 #endif
 };
 
+struct RopeConfig {
+  float theta = 10000.f;
+  float factor = 1.f;
+  float low_freq_factor = 1.f;
+  float high_freq_factor = 4.f;
+  int32_t original_context = 8192;
+};
 struct TransformerConfig {
+  RopeConfig rope;
+
   int32_t kv_dim_ = 0;
   int32_t kv_mul_ = 0;
   int32_t head_size_ = 0;
