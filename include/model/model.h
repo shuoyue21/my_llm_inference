@@ -11,6 +11,7 @@
 #include "sampler/argmax_sampler.h"
 #include "sentencepiece_processor.h"
 #include "tensor/tensor.h"
+#include "runtime/decode.h"
 
 namespace runtime { class CudaPrefill; }
 namespace model {
@@ -23,6 +24,9 @@ class Model {
   bool is_quantized() const { return is_quant_model_; }
   virtual base::Status prefill(const std::vector<int32_t>& tokens,
       const std::function<void(int, const tensor::Tensor&)>& on_logits, int& next) const;
+  virtual base::Status begin_decode(int token, int position, bool graph, bool fusion) const;
+  virtual base::Status decode_next(int& next) const;
+  virtual runtime::DecodeStats decode_stats() const;
   explicit Model(base::TokenizerType tokenizer_type, base::ModelType model_type,
                  std::string token_path, std::string model_path, bool is_quant_model);
 

@@ -50,6 +50,7 @@ void usage() {
   std::cout << "Usage: llama_infer CHECKPOINT TOKENIZER [--device cpu|cuda] [--prompt TEXT]\n"
                "       [--max-new-tokens N] [--json] [--quant] [--dump-logits FILE]\n"
                "       [--prompt-ids FILE] [--ignore-eos] [--warmup N] [--repeat N] [--prefill auto|batched|reference]\n"
+               "       [--decode auto|optimized|reference] [--cuda-graph on|off] [--fusion on|off]\n"
                "Greedy decoding. JSON reports generated text, token IDs and separate TTFT/decode metrics.\n";
 }
 }
@@ -69,13 +70,19 @@ int main(int argc, char** argv) {
       if (flag == "--json") { json = true; continue; }
       if (flag == "--quant") { quant = true; continue; }
       if (flag == "--ignore-eos") { options.ignore_eos = true; continue; }
-      if (flag != "--prompt" && flag != "--device" && flag != "--max-new-tokens" && flag != "--dump-logits" && flag != "--prompt-ids" && flag != "--repeat" && flag != "--warmup" && flag != "--prefill")
+      if (flag != "--prompt" && flag != "--device" && flag != "--max-new-tokens" && flag != "--dump-logits" && flag != "--prompt-ids" && flag != "--repeat" && flag != "--warmup" && flag != "--prefill" && flag != "--decode" && flag != "--cuda-graph" && flag != "--fusion")
         throw std::invalid_argument("Unknown option: " + flag);
       if (++i == argc) throw std::invalid_argument("Missing value for " + flag);
       std::string value = argv[i];
       if (flag == "--prompt") prompt = value;
       else if (flag == "--device") device = value;
       else if (flag == "--prefill") options.prefill_mode = value;
+      else if (flag == "--decode") options.decode_mode = value;
+      else if (flag == "--cuda-graph" || flag == "--fusion") {
+        if (value != "on" && value != "off") throw std::invalid_argument(flag + " must be on or off");
+        if (flag == "--cuda-graph") options.cuda_graph = value == "on";
+        else options.fusion = value == "on";
+      }
       else if (flag == "--dump-logits") dump_path = value;
       else if (flag == "--prompt-ids") prompt_ids_path = value;
       else if (flag == "--repeat" || flag == "--warmup") {
@@ -152,6 +159,24 @@ int main(int argc, char** argv) {
       std::cout << ",\"generated_tokens\":"; ids(result.generated_tokens);
       std::cout << ",\"stop_reason\":" << json_string(result.stop_reason)
                 << ",\"prefill_mode\":" << json_string(result.prefill_mode)
+                << ",\"decode_mode\":" << json_string(result.decode_mode)
+                << ",\"fusion_enabled\":" << (result.fusion_enabled ? "true" : "false")
+                << ",\"decode_instrumented\":" << (result.decode_instrumented ? "true" : "false")
+                << ",\"decode_setup_ms\":" << result.decode_stats.setup_ms
+                << ",\"decode_setup_total_ms\":" << result.decode_stats.setup_total_ms
+                << ",\"graph_capture_ms\":" << result.decode_stats.capture_ms
+                << ",\"graph_capture_total_ms\":" << result.decode_stats.capture_total_ms
+                << ",\"graph_warmup_ms\":" << result.decode_stats.warmup_ms
+                << ",\"graph_warmup_total_ms\":" << result.decode_stats.warmup_total_ms
+                << ",\"decode_host_submissions\":" << result.decode_stats.host_submissions
+                << ",\"decode_preparation_submissions\":" << result.decode_stats.preparation_submissions
+                << ",\"graph_capture_api_calls\":" << result.decode_stats.capture_api_calls
+                << ",\"decode_graph_launches\":" << result.decode_stats.graph_launches
+                << ",\"decode_graph_nodes\":" << result.decode_stats.graph_nodes
+                << ",\"decode_graph_kernel_nodes\":" << result.decode_stats.graph_kernel_nodes
+                << ",\"decode_graph_captures_total\":" << result.decode_stats.captures_total
+                << ",\"decode_packed_weight_bytes\":" << result.decode_stats.packed_weight_bytes
+                << ",\"decode_workspace_bytes\":" << result.decode_stats.workspace_bytes
                 << ",\"context_length\":" << model->context_length()
                 << ",\"iteration\":" << iteration
                 << ",\"warmup_requests\":" << warmups

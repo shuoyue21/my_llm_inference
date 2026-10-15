@@ -20,6 +20,42 @@ def load(path):
     return json.loads(Path(path).read_text())
 
 
+def validate_decode_metadata(sample, command, measured=True):
+    """Check the explicit Graph/fusion contract without invoking a GPU."""
+    if 'decode_mode' not in sample:  # Immutable S0/S1 formats.
+        return
+    def option(name, default):
+        result = default
+        for i in range(len(command) - 1):
+            if command[i] == name:
+                result = command[i + 1]
+        return result
+    count = len(sample['generated_tokens']) - 1
+    reference = option('--decode', 'auto') == 'reference'
+    if count <= 0 or reference:
+        require(sample['decode_mode'] == ('none' if count <= 0 else 'reference'), 'Incorrect reference/empty decode mode')
+        require(not sample['decode_instrumented'] and not sample['fusion_enabled'], 'Reference decode claimed optimized execution')
+        require(sample['decode_graph_launches'] == sample['decode_host_submissions'] == 0, 'Reference decode has optimized counters')
+        return
+    graph = option('--cuda-graph', 'on') == 'on'
+    fusion = option('--fusion', 'on') == 'on'
+    require(sample['decode_mode'] == ('cuda_graph' if graph else 'cuda_eager'), 'Requested/actual Graph mode differs')
+    require(sample['decode_instrumented'] and sample['fusion_enabled'] == fusion, 'Requested/actual fusion differs')
+    require(sample['decode_workspace_bytes'] > 0, 'Missing stable decode workspace')
+    require((sample['decode_packed_weight_bytes'] > 0) == fusion, 'Packed weight residency differs from selected mode')
+    if graph:
+        require(sample['decode_graph_launches'] == count, 'Not one Graph replay per decode token')
+        require(sample['decode_host_submissions'] == 1 + 2 * count, 'Unexpected Graph work-submission count')
+        require(sample['decode_graph_captures_total'] == 1 and sample['decode_graph_nodes'] > 0 and sample['decode_graph_kernel_nodes'] > 0, 'Missing or repeated graph capture')
+        require(sample['graph_capture_total_ms'] > 0 and sample['graph_warmup_total_ms'] > 0, 'Cold capture/warmup cost was lost')
+    else:
+        require(sample['decode_graph_launches'] == sample['decode_graph_captures_total'] == 0, 'Eager mode launched/captured a Graph')
+        require(sample['decode_graph_nodes'] == sample['decode_graph_kernel_nodes'] == 0, 'Eager mode reports active Graph nodes')
+        require(sample['decode_host_submissions'] > 1 + 2 * count, 'Eager mode has implausible submission count')
+    if measured:
+        require(sample['graph_capture_ms'] == sample['graph_warmup_ms'] == 0, 'Capture/warmup was repeated after resident warmups')
+
+
 def audit(stage, uuid, label='cumulative'):
     root = Path('docs/performance/stages') / stage
     manifest = load(root / 'manifest.json')
@@ -79,6 +115,7 @@ def audit(stage, uuid, label='cumulative'):
         require(raw == samples, name + ': raw stdout differs from recorded samples')
         for index, sample in enumerate(samples):
             require(sample['device'] == 'cuda' and sample['context_length'] == model['context'], name + ': device/context changed')
+            validate_decode_metadata(sample, record['command'])
             require(sample['iteration'] == index and sample['warmup_requests'] == 2, name + ': iterations/warmups changed')
             require(sample['prompt_tokens'] == ids and len(sample['generated_tokens']) == generated, name + ': incorrect token counts')
             require(sample['generated_tokens'] == samples[0]['generated_tokens'], name + ': nondeterministic greedy tokens')

@@ -2,7 +2,7 @@
 
 Read `docs/HANDOFF.md` before continuing this project. It records the user's full objective, actual validation status and exact commands for another machine.
 
-The completed local S0 remains frozen; S1 batched prefill is complete and current work is S2 CUDA Graph/operator fusion. The required order is: finish a complete empty-GPU baseline for all four registered models, then implement (1) batched prefill, (2) CUDA Graph plus operator fusion, (3) paged KV cache. Preserve each stage and record correctness and performance changes.
+The completed local S0 remains frozen; S1/S2 are complete and current work is S3 true paged KV cache. The required order is: finish a complete empty-GPU baseline for all four registered models, then implement (1) batched prefill, (2) CUDA Graph plus operator fusion, (3) paged KV cache. Preserve each stage and record correctness and performance changes.
 
 Use `scripts/build_variants.py` for portable builds and `scripts/download_models.py` for pinned model assets. Models, build directories, virtual environments and `.artifacts/` are intentionally excluded from Git; recreate them on the target machine.
 
@@ -17,3 +17,7 @@ The user explicitly permits the existing WSL `/Xwayland` graphics process. On th
 Local S0 `S0-Forward-20261015-163413-desktop` is now complete and audited (36 cases / 180 samples on the same GPU). See its `audit.json` and `BASELINE.md`; continue with S1 batched prefill, then S2, then S3. Do not rerun or replace this completed baseline unless its frozen artifacts fail verification.
 
 Local S1 `S1-Forward-20261015-163413-desktop` is complete: four models, 28 full-logit correctness cases, zero-error batch memcheck, and 36 performance cases / 180 samples audited and paired with S0. See its `RESULTS.md`, `comparison.json`, and `audit.json`. Continue S2 (independent graph/fusion switches and ablations), then S3 true paged KV.
+
+S2 implementation now passes all four models and four graph/fusion modes (112 full-logit cases, zero-error targeted memcheck). It is being frozen before primary and three complete ablation matrices. S3 must wait until those datasets are complete and compared.
+
+Local S2 `S2-Forward-20261015-163413-desktop` is complete: 112 correctness comparisons, zero-error targeted memcheck, four complete 36-case matrices (144 cases / 720 samples) and seven complete paired comparisons. Its frozen inference revision is `35af606`; read local RESULTS.md/RESULTS.json. Current `.gitignore` excludes new docs/performance files; preserve that user change and keep raw artifacts locally. Runtime cpp formatting changes are user-owned and semantically token-equivalent to S2; retain them while implementing S3. Read docs/performance/S3_DESIGN.md for real pages, arbitrary mappings, Graph-compatible device table, native/dense reference and physical trim requirements.

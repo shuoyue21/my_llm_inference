@@ -182,3 +182,5 @@ python scripts/compare_stages.py --baseline "$LLM_BASELINE_STAGE" \
 用户最新明确允许 WSL `/Xwayland` 桌面进程。此本机例外优先于上文旧机的严格门槛。四模型固定资产、本机构建和 CPU 对照已通过；本机 S0 使用 `scripts/gpu_policies/wsl_desktop.json` 重新冻结并运行。所有外部计算进程仍禁止，所有阶段使用同一规则。当前工作目录、运行标识、快照和队列状态详见 [LOCAL_MACHINE.md](performance/LOCAL_MACHINE.md)。
 
 本机继续进度：S0 和 S1 均已完成并审计 36/36；S1 的全部改善和退化见 [RESULTS.md](performance/stages/S1-Forward-20261015-163413-desktop/RESULTS.md)。当前工作为 S2，然后 S3；请读取本机 state.json 和 NEXT_STAGE_NOTES.md 继续。
+
+本机 S2 已完整完成四模型四套矩阵（144 场景 / 720 样本）及 112 项正确性校验，冻结源码 `35af606`。同后端消融和相对 S0/S1 的全部正负结果在本机 `docs/performance/stages/S2-Forward-20261015-163413-desktop/RESULTS.md`。当前进入 S3 真实分页 KV；保留新性能目录忽略规则和源码格式化，原始数据继续本地保存。

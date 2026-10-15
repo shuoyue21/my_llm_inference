@@ -14,6 +14,12 @@ base::Status generate(const model::Model& model, const std::string& prompt,
   if (options.prefill_mode == "batched" && !can_batch)
     return base::error::InvalidArgument("Batched prefill requires CUDA FP32");
   const bool batched = can_batch && options.prefill_mode != "reference";
+  if (options.decode_mode != "auto" && options.decode_mode != "optimized" && options.decode_mode != "reference")
+    return base::error::InvalidArgument("decode must be auto, optimized or reference");
+  if (options.decode_mode == "optimized" && !can_batch)
+    return base::error::InvalidArgument("Optimized decode requires CUDA FP32");
+  const bool optimized = can_batch && options.decode_mode != "reference";
+  bool decode_started = false;
   result.prefill_mode = options.max_new_tokens == 0 ? "none" : batched ? "batched" : "reference";
   result.prompt_tokens = options.prompt_token_ids.empty() ? model.encode(prompt) : options.prompt_token_ids;
   auto prefill_start = Clock::now();
@@ -59,16 +65,32 @@ base::Status generate(const model::Model& model, const std::string& prompt,
                        pos < prompt_size + options.max_new_tokens - 1; ++pos) {
     const int token = pos < prompt_size ? result.prompt_tokens[pos] : next;
     pos_tensor.index<int32_t>(0) = pos;
-    auto embedding = model.embedding({token});
-    auto input = model.fill_input(pos_tensor, embedding, false);
-    auto status = model.predict(input, pos_tensor, pos < prompt_size - 1, next);
-    if (!status) return status;
+    if (optimized && pos >= prompt_size) {
+      if (!decode_started) {
+        auto status = model.begin_decode(token, pos, options.cuda_graph, options.fusion);
+        if (!status) return status;
+        decode_started = true;
+      }
+      auto status = model.decode_next(next);
+      if (!status) return status;
+    } else {
+      auto embedding = model.embedding({token});
+      auto input = model.fill_input(pos_tensor, embedding, false);
+      auto status = model.predict(input, pos_tensor, pos < prompt_size - 1, next);
+      if (!status) return status;
+    }
     if (options.on_logits)
       options.on_logits(pos, model.get_buffer(model::ModelBufferType::kForwardOutput));
     if (pos < prompt_size - 1) continue;
     if (next < 0 || next >= model.vocab_size()) return base::error::InternalError("Sampler returned an invalid token");
     emit();
   }
+  if (decode_started) {
+    result.decode_stats = model.decode_stats();
+    result.decode_mode = options.cuda_graph ? "cuda_graph" : "cuda_eager";
+    result.fusion_enabled = options.fusion;
+    result.decode_instrumented = true;
+  } else if (result.generated_tokens.size() > 1) result.decode_mode = "reference";
   auto end = Clock::now();
   result.total_ms = std::chrono::duration<double,std::milli>(end-start).count();
   if (result.generated_tokens.size() > 1) {

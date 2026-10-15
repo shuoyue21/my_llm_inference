@@ -165,6 +165,28 @@ base::Status LLama2Model::prefill(const std::vector<int32_t>& tokens,
   }
 }
 
+base::Status LLama2Model::begin_decode(int token, int position, bool graph, bool fusion) const {
+  if (device_type_ != base::DeviceType::kDeviceCUDA || is_quant_model_)
+    return base::error::InvalidArgument("Optimized decode requires CUDA FP32");
+  try {
+    if (!cuda_decode_) cuda_decode_ = std::make_shared<runtime::CudaDecode>(
+        runtime::collect_prefill_weights(*llama_layers_, *config_), cuda_config_,
+        get_buffer(ModelBufferType::kForwardOutput), get_buffer(ModelBufferType::kKeyCache),
+        get_buffer(ModelBufferType::kValueCache), get_buffer(ModelBufferType::kSinCache),
+        get_buffer(ModelBufferType::kCosCache));
+    cuda_decode_->begin(token, position, graph, fusion);
+    return base::error::Success();
+  } catch (const std::exception& error) { return base::error::InternalError(error.what()); }
+}
+base::Status LLama2Model::decode_next(int& next) const {
+  if (!cuda_decode_) return base::error::InternalError("Decode request was not initialized");
+  try { next = cuda_decode_->step(); return base::error::Success(); }
+  catch (const std::exception& error) { return base::error::InternalError(error.what()); }
+}
+runtime::DecodeStats LLama2Model::decode_stats() const {
+  return cuda_decode_ ? cuda_decode_->stats() : runtime::DecodeStats{};
+}
+
 base::Status LLama2Model::forward(const tensor::Tensor& input, const tensor::Tensor& pos_tensor,
                                   int& next) const {
   if (input.is_empty()) {

@@ -37,15 +37,17 @@ def compare(base,current):
  return changes
 
 def main():
- p=argparse.ArgumentParser(description=__doc__);p.add_argument('--baseline',default='S0');p.add_argument('--stage',required=True);p.add_argument('--gpu-uuid',required=True);p.add_argument('--baseline-label',default='cumulative');p.add_argument('--label',default='cumulative');a=p.parse_args()
+ p=argparse.ArgumentParser(description=__doc__);p.add_argument('--baseline',default='S0');p.add_argument('--stage',required=True);p.add_argument('--gpu-uuid',required=True);p.add_argument('--baseline-label',default='cumulative');p.add_argument('--label',default='cumulative');p.add_argument('--output-dir',type=Path);a=p.parse_args()
  bm,base=load(a.baseline,a.baseline_label,a.gpu_uuid);cm,current=load(a.stage,a.label,a.gpu_uuid)
  if normalize_policy(bm.get('gpu_policy'))!=normalize_policy(cm.get('gpu_policy')):raise ValueError('Stage GPU isolation policies differ')
  if bm['precision']!=cm['precision'] or bm['workloads']!=cm['workloads']:raise ValueError('Workload/precision changed')
+ if len(bm['models'])!=len(cm['models']):raise ValueError('Model counts differ')
  for b,c in zip(bm['models'],cm['models']):
   if b['name']!=c['name'] or b['artifacts']!=c['artifacts']:raise ValueError('Model hashes/config differ')
  result={key:compare(base[key],current[key]) for key in base}
- root=Path('docs/performance/stages')/a.stage
- (root/'comparison.json').write_text(json.dumps({'baseline':a.baseline,'stage':a.stage,'gpu_uuid':a.gpu_uuid,'gpu_policy':normalize_policy(cm.get('gpu_policy')),'cases':result},indent=2)+'\n')
+ root=a.output_dir or Path('docs/performance/stages')/a.stage
+ root.mkdir(parents=True,exist_ok=True)
+ (root/'comparison.json').write_text(json.dumps({'baseline':a.baseline,'stage':a.stage,'baseline_label':a.baseline_label,'label':a.label,'gpu_uuid':a.gpu_uuid,'gpu_policy':normalize_policy(cm.get('gpu_policy')),'cases':result},indent=2)+'\n')
  lines=[f'# {a.stage} versus {a.baseline}',f'GPU: `{a.gpu_uuid}`. Complete matched workload matrices; all samples passed the recorded GPU isolation policy.',
  'Latency/memory change below zero means reduction; throughput change above zero means increase. Negative results are retained. NVML peak is sampled and excludes initial device usage.',
  '| Case | TTFT change | TPOT median change | Decode throughput change | Sampled peak memory change |','|---|---:|---:|---:|---:|']

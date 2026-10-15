@@ -23,6 +23,14 @@ base::Status Model::prefill(const std::vector<int32_t>&,
   return base::error::FunctionNotImplement("This model does not provide CUDA batched prefill");
 }
 
+base::Status Model::begin_decode(int, int, bool, bool) const {
+  return base::error::FunctionNotImplement("This model does not provide optimized CUDA decode");
+}
+base::Status Model::decode_next(int&) const {
+  return base::error::FunctionNotImplement("This model does not provide optimized CUDA decode");
+}
+runtime::DecodeStats Model::decode_stats() const { return {}; }
+
 base::ModelType Model::model_type() const { return model_type_; }
 
 const std::string& Model::token_path() const { return token_path_; }

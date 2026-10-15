@@ -48,6 +48,10 @@ class LLama2Model : public Model {
   base::Status prefill(const std::vector<int32_t>& tokens,
       const std::function<void(int, const tensor::Tensor&)>& on_logits, int& next) const override;
 
+  base::Status begin_decode(int token, int position, bool graph, bool fusion) const override;
+  base::Status decode_next(int& next) const override;
+  runtime::DecodeStats decode_stats() const override;
+
  private:
   void init_mem() override;
 
@@ -74,6 +78,7 @@ class LLama2Model : public Model {
  private:
   std::shared_ptr<kernel::CudaConfig> cuda_config_;
   mutable std::shared_ptr<runtime::CudaPrefill> prefill_;
+  mutable std::shared_ptr<runtime::CudaDecode> cuda_decode_;
   std::unique_ptr<LLama2Layers> llama_layers_;
 };
 }  // namespace model
