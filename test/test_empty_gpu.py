@@ -63,7 +63,7 @@ class DesktopPolicyTests(unittest.TestCase):
    self.assertEqual(policy_from_environment(),self.monitor.policy)
 class PairingTests(unittest.TestCase):
  def record(self,ttft,throughput):
-  return {'gpu_uuid':'GPU-a','precision':'fp32','model':'example','prompt_tokens':8,'generated_tokens':32,'cpu_threads':1,'warmups':2,'repeats':5,'samples':[{'prompt_tokens':[1]*8}],
+  return {'gpu_uuid':'GPU-a','precision':'fp32','model':'example','prompt_tokens':8,'generated_tokens':32,'cpu_threads':1,'warmups':2,'repeats':5,'samples':[{'prompt_tokens':[1]*8,'generated_tokens':[2]*32}],
    'metrics':{'ttft_ms':{'median':ttft},'prefill_ms':{'median':ttft},'total_ms':{'median':ttft},'decode_tokens_per_second':{'median':throughput},'tpot_ms':{'median':ttft,'p95':ttft,'p99':ttft}},'monitor':{'peak_sampled_device_memory_bytes':1000},'before':{'memory_used_bytes':100}}
  def test_known_latency_reduction_and_throughput_increase(self):
   from compare_stages import compare
@@ -75,6 +75,10 @@ class PairingTests(unittest.TestCase):
  def test_different_actual_token_sequence_is_rejected(self):
   from compare_stages import compare
   base=self.record(10,100);current=self.record(5,200);current['samples'][0]['prompt_tokens'][0]=2
+  with self.assertRaises(ValueError):compare(base,current)
+ def test_different_greedy_outputs_are_not_a_correct_stage_comparison(self):
+  from compare_stages import compare
+  base=self.record(10,100);current=self.record(5,200);current['samples'][0]['generated_tokens'][0]=3
   with self.assertRaises(ValueError):compare(base,current)
  def test_mismatched_gpu_policy_is_not_a_paired_comparison(self):
   from compare_stages import compare

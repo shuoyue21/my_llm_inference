@@ -24,6 +24,7 @@ def compare(base,current):
  for key in ['gpu_uuid','precision','model','prompt_tokens','generated_tokens','cpu_threads','warmups','repeats']:
   if base[key]!=current[key]:raise ValueError('Unpaired field '+key)
  if base['samples'][0]['prompt_tokens']!=current['samples'][0]['prompt_tokens']:raise ValueError('Prompt token IDs differ')
+ if base['samples'][0]['generated_tokens']!=current['samples'][0]['generated_tokens']:raise ValueError('Greedy generated token IDs differ')
  changes={}
  for metric in ['ttft_ms','prefill_ms','decode_tokens_per_second','total_ms']:
   b=base['metrics'][metric]['median'];c=current['metrics'][metric]['median']

@@ -9,6 +9,8 @@
 #include "../op/kernels/cpu/rope_kernel.h"
 #include "../op/kernels/cuda/rope_kernel.cuh"
 #include "base/tick.h"
+#include "runtime/prefill_weights.h"
+#include <stdexcept>
 namespace model {
 
 void Qwen2Layers::to_cuda(std::shared_ptr<kernel::CudaConfig> config) {
@@ -142,6 +144,25 @@ base::Status Qwen2Model::init(base::DeviceType device_type) {
 
   sampler_ = std::make_unique<sampler::ArgmaxSampler>(device_type_);
   return error::Success();
+}
+
+base::Status Qwen2Model::prefill(const std::vector<int32_t>& tokens,
+    const std::function<void(int, const tensor::Tensor&)>& on_logits, int& next) const {
+  if (device_type_ != base::DeviceType::kDeviceCUDA || is_quant_model_)
+    return base::error::InvalidArgument("Batched prefill requires CUDA FP32");
+  try {
+    if (!prefill_) prefill_ = std::make_shared<runtime::CudaPrefill>(
+        runtime::collect_prefill_weights(*qwen_layers_, *config_), cuda_config_);
+    auto logits = get_buffer(ModelBufferType::kForwardOutput);
+    auto keys = get_buffer(ModelBufferType::kKeyCache);
+    auto values = get_buffer(ModelBufferType::kValueCache);
+    prefill_->run(tokens, logits, get_buffer(ModelBufferType::kSinCache),
+        get_buffer(ModelBufferType::kCosCache), keys, values, on_logits);
+    next = post_processing(get_buffer(ModelBufferType::kInputPos), false);
+    return base::error::Success();
+  } catch (const std::exception& error) {
+    return base::error::InternalError(error.what());
+  }
 }
 
 base::Status Qwen2Model::forward(const tensor::Tensor& input, const tensor::Tensor& pos_tensor,

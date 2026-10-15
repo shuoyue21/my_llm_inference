@@ -25,6 +25,8 @@ class MatmulLayer : public LayerParam {
 
   void to_cuda() override;
 
+  bool has_bias() const { return has_bias_; }
+
  private:
   int32_t dim0_ = 0;
   int32_t dim1_ = 0;

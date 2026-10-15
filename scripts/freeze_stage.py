@@ -34,7 +34,7 @@ def main():
   unit=out/'bin/test_llm';shutil.copy2(Path(m['build'])/'test/test_llm',unit)
   item=dict(m,binary=str(binary),library=str(library),test_binary=str(unit),test_binary_sha256=digest(unit),binary_sha256=digest(binary),library_sha256=digest(library))
   dependencies={}
-  linked=subprocess.check_output(['ldd',str(Path(m['build'])/'demo/llama_infer')],text=True)
+  linked='\n'.join(subprocess.check_output(['ldd',str(Path(m['build'])/name)],text=True) for name in ['demo/llama_infer','test/test_llm'])
   for soname,original in re.findall(r'\s*(\S+) => (/\S+)',linked):
    source=Path(original)
    if source.resolve().is_relative_to(Path.cwd()):

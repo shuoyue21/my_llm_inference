@@ -2,6 +2,7 @@
 #define KUIPER_INCLUDE_MODEL_MODEL_H_
 #include <op/embedding.h>
 #include <map>
+#include <functional>
 #include <string>
 #include "config.h"
 #include "op/encode.h"
@@ -11,6 +12,7 @@
 #include "sentencepiece_processor.h"
 #include "tensor/tensor.h"
 
+namespace runtime { class CudaPrefill; }
 namespace model {
 class Model {
  public:
@@ -18,6 +20,9 @@ class Model {
   int32_t context_length() const { return config_->seq_len_; }
   int32_t vocab_size() const { return config_->vocab_size_; }
   base::DeviceType device_type() const { return device_type_; }
+  bool is_quantized() const { return is_quant_model_; }
+  virtual base::Status prefill(const std::vector<int32_t>& tokens,
+      const std::function<void(int, const tensor::Tensor&)>& on_logits, int& next) const;
   explicit Model(base::TokenizerType tokenizer_type, base::ModelType model_type,
                  std::string token_path, std::string model_path, bool is_quant_model);
 

@@ -127,6 +127,7 @@ target_link_libraries(llama
   glog::glog
   pthread
   CUDA::cudart
+  CUDA::cublas
   armadillo
 )
 

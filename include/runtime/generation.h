@@ -5,6 +5,7 @@ namespace runtime {
 struct GenerationOptions {
   int max_new_tokens = 64;
   bool ignore_eos = false;
+  std::string prefill_mode = "auto";
   std::vector<int32_t> prompt_token_ids;
   // Optional diagnostic callback; synchronizing/copying logits affects timings.
   std::function<void(int, const tensor::Tensor&)> on_logits;
@@ -14,6 +15,7 @@ struct GenerationResult {
   std::vector<int32_t> generated_tokens;
   std::string text;
   std::string stop_reason;
+  std::string prefill_mode;
   double tokenization_ms = 0;
   double prefill_ms = 0;
   std::vector<double> decode_token_ms;

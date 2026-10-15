@@ -60,6 +60,9 @@ class Qwen3Model : public Model {
 
   op::EmbeddingOutput embedding(const std::vector<int>& tokens) const override;
 
+  base::Status prefill(const std::vector<int32_t>& tokens,
+      const std::function<void(int, const tensor::Tensor&)>& on_logits, int& next) const override;
+
  private:
   void init_mem() override;
 
@@ -85,6 +88,7 @@ class Qwen3Model : public Model {
 
  private:
   std::shared_ptr<kernel::CudaConfig> cuda_config_;
+  mutable std::shared_ptr<runtime::CudaPrefill> prefill_;
   std::unique_ptr<Qwen3Layers> qwen_layers_;
 };
 }  // namespace model

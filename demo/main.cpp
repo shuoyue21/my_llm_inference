@@ -49,7 +49,7 @@ void ids(const std::vector<int32_t>& values) {
 void usage() {
   std::cout << "Usage: llama_infer CHECKPOINT TOKENIZER [--device cpu|cuda] [--prompt TEXT]\n"
                "       [--max-new-tokens N] [--json] [--quant] [--dump-logits FILE]\n"
-               "       [--prompt-ids FILE] [--ignore-eos] [--warmup N] [--repeat N]\n"
+               "       [--prompt-ids FILE] [--ignore-eos] [--warmup N] [--repeat N] [--prefill auto|batched|reference]\n"
                "Greedy decoding. JSON reports generated text, token IDs and separate TTFT/decode metrics.\n";
 }
 }
@@ -69,12 +69,13 @@ int main(int argc, char** argv) {
       if (flag == "--json") { json = true; continue; }
       if (flag == "--quant") { quant = true; continue; }
       if (flag == "--ignore-eos") { options.ignore_eos = true; continue; }
-      if (flag != "--prompt" && flag != "--device" && flag != "--max-new-tokens" && flag != "--dump-logits" && flag != "--prompt-ids" && flag != "--repeat" && flag != "--warmup")
+      if (flag != "--prompt" && flag != "--device" && flag != "--max-new-tokens" && flag != "--dump-logits" && flag != "--prompt-ids" && flag != "--repeat" && flag != "--warmup" && flag != "--prefill")
         throw std::invalid_argument("Unknown option: " + flag);
       if (++i == argc) throw std::invalid_argument("Missing value for " + flag);
       std::string value = argv[i];
       if (flag == "--prompt") prompt = value;
       else if (flag == "--device") device = value;
+      else if (flag == "--prefill") options.prefill_mode = value;
       else if (flag == "--dump-logits") dump_path = value;
       else if (flag == "--prompt-ids") prompt_ids_path = value;
       else if (flag == "--repeat" || flag == "--warmup") {
@@ -150,6 +151,7 @@ int main(int argc, char** argv) {
       ids(result.prompt_tokens);
       std::cout << ",\"generated_tokens\":"; ids(result.generated_tokens);
       std::cout << ",\"stop_reason\":" << json_string(result.stop_reason)
+                << ",\"prefill_mode\":" << json_string(result.prefill_mode)
                 << ",\"context_length\":" << model->context_length()
                 << ",\"iteration\":" << iteration
                 << ",\"warmup_requests\":" << warmups

@@ -18,6 +18,11 @@ Model::Model(base::TokenizerType tokenizer_type, base::ModelType model_type, std
       model_path_(std::move(model_path)),
       is_quant_model_(is_quant_model) {}
 
+base::Status Model::prefill(const std::vector<int32_t>&,
+    const std::function<void(int, const tensor::Tensor&)>&, int&) const {
+  return base::error::FunctionNotImplement("This model does not provide CUDA batched prefill");
+}
+
 base::ModelType Model::model_type() const { return model_type_; }
 
 const std::string& Model::token_path() const { return token_path_; }
