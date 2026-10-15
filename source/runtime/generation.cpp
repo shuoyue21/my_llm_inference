@@ -8,22 +8,26 @@ base::Status generate(const model::Model& model, const std::string& prompt,
   result = {};
   if (options.max_new_tokens < 0)
     return base::error::InvalidArgument("max-new-tokens must be nonnegative");
-  if (options.prefill_mode != "auto" && options.prefill_mode != "batched" && options.prefill_mode != "reference")
+  if (options.prefill_mode != "auto" && options.prefill_mode != "batched" &&
+      options.prefill_mode != "reference")
     return base::error::InvalidArgument("prefill must be auto, batched or reference");
-  const bool can_batch = model.device_type() == base::DeviceType::kDeviceCUDA && !model.is_quantized();
+  const bool can_batch =
+      model.device_type() == base::DeviceType::kDeviceCUDA && !model.is_quantized();
   if (options.prefill_mode == "batched" && !can_batch)
     return base::error::InvalidArgument("Batched prefill requires CUDA FP32");
   const bool batched = can_batch && options.prefill_mode != "reference";
-  if (options.decode_mode != "auto" && options.decode_mode != "optimized" && options.decode_mode != "reference")
+  if (options.decode_mode != "auto" && options.decode_mode != "optimized" &&
+      options.decode_mode != "reference")
     return base::error::InvalidArgument("decode must be auto, optimized or reference");
   if (options.decode_mode == "optimized" && !can_batch)
     return base::error::InvalidArgument("Optimized decode requires CUDA FP32");
   const bool optimized = can_batch && options.decode_mode != "reference";
   bool decode_started = false;
   result.prefill_mode = options.max_new_tokens == 0 ? "none" : batched ? "batched" : "reference";
-  result.prompt_tokens = options.prompt_token_ids.empty() ? model.encode(prompt) : options.prompt_token_ids;
+  result.prompt_tokens =
+      options.prompt_token_ids.empty() ? model.encode(prompt) : options.prompt_token_ids;
   auto prefill_start = Clock::now();
-  result.tokenization_ms = std::chrono::duration<double,std::milli>(prefill_start-start).count();
+  result.tokenization_ms = std::chrono::duration<double, std::milli>(prefill_start - start).count();
   if (result.prompt_tokens.empty())
     return base::error::InvalidArgument("Prompt produced no tokens");
   if (result.prompt_tokens.size() > static_cast<size_t>(model.context_length()) ||
@@ -32,6 +36,13 @@ base::Status generate(const model::Model& model, const std::string& prompt,
   for (int token : result.prompt_tokens)
     if (token < 0 || token >= model.vocab_size())
       return base::error::InvalidArgument("Tokenizer produced an out-of-vocabulary token");
+  auto request_status = model.begin_request();
+  if (!request_status) return request_status;
+  struct RequestGuard {
+    const model::Model& model;
+    bool active = true;
+    ~RequestGuard() { if (active) model.end_request(); }
+  } request_guard{model};
   result.stop_reason = "length";
   auto first_token_time = start;
   const int prompt_size = static_cast<int>(result.prompt_tokens.size());
@@ -43,26 +54,34 @@ base::Status generate(const model::Model& model, const std::string& prompt,
     result.generated_tokens.push_back(next);
     auto token_time = Clock::now();
     if (result.generated_tokens.size() > 1)
-      result.decode_token_ms.push_back(std::chrono::duration<double,std::milli>(token_time-previous_token_time).count());
+      result.decode_token_ms.push_back(
+          std::chrono::duration<double, std::milli>(token_time - previous_token_time).count());
     previous_token_time = token_time;
     if (result.generated_tokens.size() == 1) {
       first_token_time = token_time;
-      result.prefill_ms = std::chrono::duration<double,std::milli>(token_time-prefill_start).count();
-      result.ttft_ms = std::chrono::duration<double,std::milli>(token_time-start).count();
+      result.prefill_ms =
+          std::chrono::duration<double, std::milli>(token_time - prefill_start).count();
+      result.ttft_ms = std::chrono::duration<double, std::milli>(token_time - start).count();
     }
-    if (!options.ignore_eos && model.is_sentence_ending(next)) {result.stop_reason = "eos"; stopped = true;}
+    if (!options.ignore_eos && model.is_sentence_ending(next)) {
+      result.stop_reason = "eos";
+      stopped = true;
+    }
   };
   int begin = 0;
   if (batched && options.max_new_tokens > 0) {
     pos_tensor.index<int32_t>(0) = prompt_size - 1;
     auto status = model.prefill(result.prompt_tokens, options.on_logits, next);
     if (!status) return status;
-    if (next < 0 || next >= model.vocab_size()) return base::error::InternalError("Sampler returned an invalid token");
-    emit(); begin = prompt_size;
+    if (next < 0 || next >= model.vocab_size())
+      return base::error::InternalError("Sampler returned an invalid token");
+    emit();
+    begin = prompt_size;
   }
   // Reference mode retains the original per-token prefill. Decode is shared.
-  for (int pos = begin; !stopped && options.max_new_tokens > 0 &&
-                       pos < prompt_size + options.max_new_tokens - 1; ++pos) {
+  for (int pos = begin;
+       !stopped && options.max_new_tokens > 0 && pos < prompt_size + options.max_new_tokens - 1;
+       ++pos) {
     const int token = pos < prompt_size ? result.prompt_tokens[pos] : next;
     pos_tensor.index<int32_t>(0) = pos;
     if (optimized && pos >= prompt_size) {
@@ -82,7 +101,8 @@ base::Status generate(const model::Model& model, const std::string& prompt,
     if (options.on_logits)
       options.on_logits(pos, model.get_buffer(model::ModelBufferType::kForwardOutput));
     if (pos < prompt_size - 1) continue;
-    if (next < 0 || next >= model.vocab_size()) return base::error::InternalError("Sampler returned an invalid token");
+    if (next < 0 || next >= model.vocab_size())
+      return base::error::InternalError("Sampler returned an invalid token");
     emit();
   }
   if (decode_started) {
@@ -90,12 +110,20 @@ base::Status generate(const model::Model& model, const std::string& prompt,
     result.decode_mode = options.cuda_graph ? "cuda_graph" : "cuda_eager";
     result.fusion_enabled = options.fusion;
     result.decode_instrumented = true;
-  } else if (result.generated_tokens.size() > 1) result.decode_mode = "reference";
+  } else if (result.generated_tokens.size() > 1)
+    result.decode_mode = "reference";
+  auto release_start = Clock::now();
+  auto release_status = model.end_request();
+  if (!release_status) return release_status;
+  request_guard.active = false;
+  result.kv_release_ms = std::chrono::duration<double, std::milli>(Clock::now() - release_start).count();
+  result.kv_stats = model.kv_cache_stats();
   auto end = Clock::now();
-  result.total_ms = std::chrono::duration<double,std::milli>(end-start).count();
+  result.total_ms = std::chrono::duration<double, std::milli>(end - start).count();
   if (result.generated_tokens.size() > 1) {
-    result.decode_ms = std::chrono::duration<double,std::milli>(end-first_token_time).count();
-    result.decode_tokens_per_second = (result.generated_tokens.size()-1)*1000.0/result.decode_ms;
+    result.decode_ms = std::chrono::duration<double, std::milli>(end - first_token_time).count();
+    result.decode_tokens_per_second =
+        (result.generated_tokens.size() - 1) * 1000.0 / result.decode_ms;
   }
   auto visible_tokens = result.generated_tokens;
   if (result.stop_reason == "eos" && !visible_tokens.empty()) visible_tokens.pop_back();

@@ -6,6 +6,8 @@
 #include <limits>
 #include <memory>
 #include <fstream>
+#include <stdexcept>
+#include <algorithm>
 #if defined(LLAMA3_SUPPORT) || defined(QWEN2_SUPPORT) || defined(QWEN3_SUPPORT)
 #include <nlohmann/json.hpp>
 #endif
@@ -30,6 +32,77 @@ base::Status Model::decode_next(int&) const {
   return base::error::FunctionNotImplement("This model does not provide optimized CUDA decode");
 }
 runtime::DecodeStats Model::decode_stats() const { return {}; }
+
+base::Status Model::configure_kv_cache(const std::string& mode, int page_tokens) {
+  if (device_type_ != base::DeviceType::kDeviceUnknown)
+    return base::error::InvalidArgument("Configure KV cache before model init");
+  if ((mode != "auto" && mode != "paged" && mode != "contiguous") || page_tokens <= 0)
+    return base::error::InvalidArgument("Invalid KV cache mode/page size");
+  requested_kv_mode_ = mode; kv_page_tokens_ = page_tokens;
+  return base::error::Success();
+}
+base::Status Model::validate_kv_configuration() const {
+  if (requested_kv_mode_ == "paged" && (device_type_ != base::DeviceType::kDeviceCUDA || is_quant_model_))
+    return base::error::InvalidArgument("Paged KV requires CUDA FP32");
+  return base::error::Success();
+}
+void Model::initialize_kv_cache(const std::shared_ptr<base::DeviceAllocator>& allocator,
+                                std::shared_ptr<kernel::CudaConfig> cuda) {
+  cache_config_ = std::move(cuda);
+  const bool paged = requested_kv_mode_ != "contiguous" && device_type_ == base::DeviceType::kDeviceCUDA && !is_quant_model_;
+  if (paged) {
+    paged_cache_ = std::make_shared<runtime::PagedKVCache>(config_->layer_num_, config_->seq_len_,
+        config_->kv_dim_, kv_page_tokens_, cache_config_);
+  } else {
+    tensor::Tensor keys(base::DataType::kDataTypeFp32, config_->layer_num_, config_->seq_len_, config_->kv_dim_, true, allocator);
+    tensor::Tensor values(base::DataType::kDataTypeFp32, config_->layer_num_, config_->seq_len_, config_->kv_dim_, true, allocator);
+    STATUS_CHECK(insert_buffer(ModelBufferType::kKeyCache, keys));
+    STATUS_CHECK(insert_buffer(ModelBufferType::kValueCache, values));
+  }
+}
+base::Status Model::begin_request() const {
+  try {
+    if (request_active_) { auto status = end_request(); if (!status) return status; }
+    request_tokens_ = 0;
+    if (paged_cache_) paged_cache_->begin_request();
+    request_active_ = true;
+    return base::error::Success();
+  } catch (const std::exception& error) { return base::error::InternalError(error.what()); }
+}
+base::Status Model::end_request() const {
+  try {
+    if (request_active_ && paged_cache_) paged_cache_->release_request();
+    request_active_ = false;
+    return base::error::Success();
+  } catch (const std::exception& error) { return base::error::InternalError(error.what()); }
+}
+base::Status Model::trim_kv_cache() const {
+  try {
+    if (paged_cache_) paged_cache_->trim();
+    return base::error::Success();
+  } catch (const std::exception& error) { return base::error::InternalError(error.what()); }
+}
+void Model::reserve_cache_tokens(int count) const {
+  if (count < 0 || count > config_->seq_len_) throw std::out_of_range("KV token count exceeds context");
+  if (!request_active_) { auto status = begin_request(); if (!status) throw std::runtime_error(status.get_err_msg()); }
+  if (paged_cache_) paged_cache_->ensure_tokens(count);
+  request_tokens_ = std::max(request_tokens_, count);
+}
+runtime::KVCacheView Model::kv_cache_view() const {
+  if (paged_cache_) return paged_cache_->view();
+  return {const_cast<float*>(get_buffer(ModelBufferType::kKeyCache).ptr<float>()),
+          const_cast<float*>(get_buffer(ModelBufferType::kValueCache).ptr<float>()), nullptr,
+          config_->layer_num_, config_->seq_len_, config_->kv_dim_, 0};
+}
+runtime::KVCacheStats Model::kv_cache_stats() const {
+  if (paged_cache_) return paged_cache_->stats();
+  runtime::KVCacheStats stats;
+  stats.logical_tokens = request_tokens_;
+  stats.reserved_bytes = get_buffer(ModelBufferType::kKeyCache).byte_size() + get_buffer(ModelBufferType::kValueCache).byte_size();
+  stats.mapped_bytes = stats.peak_mapped_bytes = stats.peak_reserved_bytes = stats.reserved_bytes;
+  stats.effective_bytes = size_t(request_tokens_) * config_->layer_num_ * config_->kv_dim_ * 2 * sizeof(float);
+  return stats;
+}
 
 base::ModelType Model::model_type() const { return model_type_; }
 
@@ -267,6 +340,14 @@ std::pair<tensor::Tensor, tensor::Tensor> Model::slice_kv_cache(int32_t layer_id
   CHECK_LT(layer_idx, config_->layer_num_);
   CHECK_GE(token_pos, 0);
   CHECK_LT(token_pos, config_->seq_len_);
+  reserve_cache_tokens(token_pos + 1);
+  if (paged_cache_) {
+    auto [key_pointer, value_pointer] = paged_cache_->slot(layer_idx, token_pos);
+    tensor::Tensor key(base::DataType::kDataTypeFp32, config_->kv_dim_, false, nullptr, key_pointer);
+    tensor::Tensor value(base::DataType::kDataTypeFp32, config_->kv_dim_, false, nullptr, value_pointer);
+    key.set_device_type(device_type_); value.set_device_type(device_type_);
+    return {key, value};
+  }
   int32_t layer_offset = layer_idx * config_->seq_len_ * config_->kv_dim_;
   int32_t cache_offset = layer_offset + token_pos * config_->kv_dim_;
 

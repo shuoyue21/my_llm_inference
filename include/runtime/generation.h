@@ -23,6 +23,8 @@ struct GenerationResult {
   bool fusion_enabled = false;
   bool decode_instrumented = false;
   DecodeStats decode_stats;
+  KVCacheStats kv_stats;
+  double kv_release_ms = 0;
   double tokenization_ms = 0;
   double prefill_ms = 0;
   std::vector<double> decode_token_ms;

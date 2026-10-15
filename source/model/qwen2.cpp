@@ -10,6 +10,7 @@
 #include "../op/kernels/cuda/rope_kernel.cuh"
 #include "base/tick.h"
 #include "runtime/prefill_weights.h"
+#include "../op/kernels/cuda/decode_kernels.cuh"
 #include <stdexcept>
 namespace model {
 
@@ -116,6 +117,8 @@ base::Status Qwen2Model::init(base::DeviceType device_type) {
   }
 
   device_type_ = device_type;
+  auto cache_options = validate_kv_configuration();
+  if (!cache_options) return cache_options;
   if (device_type == DeviceType::kDeviceCUDA) {
     cudaSetDevice(0);
     cuda_config_ = std::make_shared<kernel::CudaConfig>();
@@ -154,10 +157,9 @@ base::Status Qwen2Model::prefill(const std::vector<int32_t>& tokens,
     if (!prefill_) prefill_ = std::make_shared<runtime::CudaPrefill>(
         runtime::collect_prefill_weights(*qwen_layers_, *config_), cuda_config_);
     auto logits = get_buffer(ModelBufferType::kForwardOutput);
-    auto keys = get_buffer(ModelBufferType::kKeyCache);
-    auto values = get_buffer(ModelBufferType::kValueCache);
+    reserve_cache_tokens(static_cast<int>(tokens.size()));
     prefill_->run(tokens, logits, get_buffer(ModelBufferType::kSinCache),
-        get_buffer(ModelBufferType::kCosCache), keys, values, on_logits);
+        get_buffer(ModelBufferType::kCosCache), kv_cache_view(), on_logits);
     next = post_processing(get_buffer(ModelBufferType::kInputPos), false);
     return base::error::Success();
   } catch (const std::exception& error) {
@@ -169,10 +171,11 @@ base::Status Qwen2Model::begin_decode(int token, int position, bool graph, bool 
   if (device_type_ != base::DeviceType::kDeviceCUDA || is_quant_model_)
     return base::error::InvalidArgument("Optimized decode requires CUDA FP32");
   try {
+    reserve_cache_tokens(position + 1);
     if (!cuda_decode_) cuda_decode_ = std::make_shared<runtime::CudaDecode>(
         runtime::collect_prefill_weights(*qwen_layers_, *config_), cuda_config_,
-        get_buffer(ModelBufferType::kForwardOutput), get_buffer(ModelBufferType::kKeyCache),
-        get_buffer(ModelBufferType::kValueCache), get_buffer(ModelBufferType::kSinCache),
+        get_buffer(ModelBufferType::kForwardOutput), kv_cache_view(),
+        get_buffer(ModelBufferType::kSinCache),
         get_buffer(ModelBufferType::kCosCache));
     cuda_decode_->begin(token, position, graph, fusion);
     return base::error::Success();
@@ -180,7 +183,7 @@ base::Status Qwen2Model::begin_decode(int token, int position, bool graph, bool 
 }
 base::Status Qwen2Model::decode_next(int& next) const {
   if (!cuda_decode_) return base::error::InternalError("Decode request was not initialized");
-  try { next = cuda_decode_->step(); return base::error::Success(); }
+  try { reserve_cache_tokens(cuda_decode_->next_position() + 1); next = cuda_decode_->step(); return base::error::Success(); }
   catch (const std::exception& error) { return base::error::InternalError(error.what()); }
 }
 runtime::DecodeStats Qwen2Model::decode_stats() const {
@@ -512,14 +515,8 @@ void Qwen2Model::init_mem() {
   CHECK(insert_buffer(ModelBufferType::kW1Output, w1_output));
   CHECK(insert_buffer(ModelBufferType::kW3Output, w3_output));
 
-  // kv cache
-  tensor::Tensor key_cache(base::DataType::kDataTypeFp32, config_->layer_num_, config_->seq_len_,
-                           config_->kv_dim_, true, alloc);
-  tensor::Tensor value_cache(base::DataType::kDataTypeFp32, config_->layer_num_, config_->seq_len_,
-                             config_->kv_dim_, true, alloc);
-
-  CHECK(insert_buffer(ModelBufferType::kKeyCache, key_cache));
-  CHECK(insert_buffer(ModelBufferType::kValueCache, value_cache));
+  // Dense reference allocation or genuinely demand-allocated physical pages.
+  initialize_kv_cache(alloc, cuda_config_);
 
   // Wq query output
   tensor::Tensor query(base::DataType::kDataTypeFp32, config_->dim_, true, alloc);
@@ -676,22 +673,31 @@ base::Status Qwen2Model::predict(const tensor::Tensor& input, const tensor::Tens
 
 void Qwen2Model::attention_mha(int32_t layer_idx, const tensor::Tensor& pos_tensor) const {
   CHECK(qwen_layers_ != nullptr);
-  // mha
-  tensor::Tensor key_cache = get_buffer(ModelBufferType::kKeyCache);
-  // VAL = [val1,val2,...val t]
-  // output @ VAL = 最终的结果
-  tensor::Tensor val_cache = get_buffer(ModelBufferType::kValueCache);
-
   tensor::Tensor mha_output = get_buffer(ModelBufferType::kOutputMHA);
   tensor::Tensor score_storage = get_buffer(ModelBufferType::kScoreStorage);
   tensor::Tensor query = this->get_buffer(ModelBufferType::kQuery);
+  if (paged_cache_) {
+    kernel::decode_cache_attention(query.ptr<float>(), kv_cache_view(), layer_idx,
+        const_cast<float*>(score_storage.ptr<float>()), const_cast<float*>(mha_output.ptr<float>()),
+        nullptr, pos_tensor.index<int32_t>(0), config_->head_num_, config_->kv_head_num_,
+        config_->head_size_, cuda_config_->stream);
+    CHECK_EQ(cudaGetLastError(), cudaSuccess);
+  } else {
+    // mha
+    tensor::Tensor key_cache = get_buffer(ModelBufferType::kKeyCache);
+    // VAL = [val1,val2,...val t]
+    // output @ VAL = 最终的结果
+    tensor::Tensor val_cache = get_buffer(ModelBufferType::kValueCache);
 
-  const auto& mha_layer = qwen_layers_->mha_layer_;
-  CHECK_NE(mha_layer, nullptr) << "The multi head attention layer is null pointer.";
-  int pos = pos_tensor.index<int32_t>(0);
-  std::dynamic_pointer_cast<op::MultiHeadAttention>(mha_layer)->set_pos(pos);
-  std::dynamic_pointer_cast<op::MultiHeadAttention>(mha_layer)->set_layer_idx(layer_idx);
-  STATUS_CHECK(mha_layer->forward(query, score_storage, key_cache, val_cache, mha_output));
+
+    const auto& mha_layer = qwen_layers_->mha_layer_;
+    CHECK_NE(mha_layer, nullptr) << "The multi head attention layer is null pointer.";
+    int pos = pos_tensor.index<int32_t>(0);
+    std::dynamic_pointer_cast<op::MultiHeadAttention>(mha_layer)->set_pos(pos);
+    std::dynamic_pointer_cast<op::MultiHeadAttention>(mha_layer)->set_layer_idx(layer_idx);
+    STATUS_CHECK(mha_layer->forward(query, score_storage, key_cache, val_cache, mha_output));
+
+  }
 
   // wo @ attention output
   tensor::Tensor attn_output = get_buffer(ModelBufferType::kAttnOutput);

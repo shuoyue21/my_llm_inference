@@ -18,13 +18,14 @@ struct DecodeStats {
 class CudaDecode {
  public:
   CudaDecode(PrefillWeights weights, std::shared_ptr<kernel::CudaConfig> config,
-             tensor::Tensor logits, tensor::Tensor keys, tensor::Tensor values,
+             tensor::Tensor logits, KVCacheView cache,
              tensor::Tensor sin_cache, tensor::Tensor cos_cache);
   ~CudaDecode();
   CudaDecode(const CudaDecode&) = delete;
   CudaDecode& operator=(const CudaDecode&) = delete;
   void begin(int token, int position, bool graph, bool fusion);
   int step();
+  int next_position() const;
   DecodeStats stats() const;
  private:
   struct Impl;

@@ -1,8 +1,25 @@
 # 换机器运行与后续开发交接
 
-最后整理：2026-10-15。工作分支：`codex/complete-inference`。仓库：<https://github.com/shuoyue21/my_llm_inference>。
+最后整理：2026-10-16。工作分支：`codex/local-staged-inference-20261015`。仓库：<https://github.com/shuoyue21/my_llm_inference>。
 
-## 任务目标与真实进度
+## 本机最终状态（2026-10-15）
+
+**原目标已全部完成，并从原始数据逐项复核。** 当前工作树 `/home/forward/mycode/my_llm_inference_handoff`，分支 `codex/local-staged-inference-20261015`。本机 GPU `GPU-c8c002a0-861e-e0e3-3b8d-138381f9f61d`（RTX 5070 Ti）。
+
+| 阶段 | 冻结推理源码 | 完整性能场景 |
+|---|---|---:|
+| S0 原始基线 | f36fa56 | 36 |
+| S1 真正批量 prefill | fffbc89 | 36 |
+| S2 CUDA Graph / 新算子融合 | 35af606 | 144（主矩阵＋三个独立消融） |
+| S3 真实分页 KV | 0aff906 | 72（分页＋连续参考） |
+
+最终选定数据共 288 场景 / 1440 正式样本，四阶段主矩阵均 36/36。另保留未采用 r2 的完整 72 场景 / 360 样本；r2 没有带来整体分页收益，已恢复选定实现。S1/S2/S3 完整 logits/greedy 正确性分别为 28/112/224 项，新路径专项 memcheck 均 0 errors；实际物理页、随机映射、扩展/复用、trim 回收和 Graph 跨页复用均已测试。
+
+[最终性能汇总](PERFORMANCE_RESULTS.md) 随源码提交。原始数据、完整指标 CSV 和审计输出只在本机 `docs/performance/`，不提交 Git；原始数据在各阶段文件夹，冻结程序/私有动态库在 `.artifacts/performance/`，原始正确性 logits 在 `.artifacts/validation/`。整个性能目录已取消跟踪并保存在本机。用户明确允许 `/Xwayland` 桌面驻留，其他计算任务始终拒绝，未终止他人的任务。
+
+以下为旧机器迁移交接记录，保留用于重建和追溯；其中“23/36／未实现”描述旧机当时状态，本机完成状态以本节和最终审计为准。
+
+## 旧机任务目标与当时进度
 
 用户要求：先跑通 Qwen3/Llama3；在**未实现任何新特性**的 S0 上记录各种模型和输入/输出长度的性能；再依次实现前三个特性，每完成一项记录正确性、性能改善或退化。全部 GPU 性能测试必须在空卡上运行。用户已同意自动使用任何空闲卡，不需要再次询问卡号。
 
@@ -10,7 +27,7 @@
 |---|---|
 | TinyStories 15M / Llama2 风格、Qwen2.5-0.5B-Instruct、Qwen3-0.6B、Llama3.2-1B-Instruct | CPU 和 CUDA 推理、独立逐步 logits、分词、greedy token 对齐通过 |
 | Qwen3 / Llama3 完整问答与 EOS | 通过；CPU 示例在 docs/performance/bringup/ |
-| S0 原始基线 | 旧机器有效 23/36 项，尚未完成完整矩阵；[明细和证据](performance/S0_PARTIAL.md) |
+| S0 原始基线 | 旧机器有效 23/36 项，尚未完成完整矩阵；明细和证据保存在本机 `docs/performance/S0_PARTIAL.md` |
 | S1：批量 prefill | 未实现 |
 | S2：CUDA Graph + 算子融合 | 未实现 |
 | S3：分页 KV Cache | 未实现 |
@@ -37,7 +54,7 @@ cd my_llm_inference
 git remote set-url origin https://github.com/shuoyue21/my_llm_inference.git
 ```
 
-模型权重、编译产物、Python 环境和 `.artifacts/` 冻结二进制不上传 GitHub。仓库里保留源码、下载/转换脚本、模型资产哈希、测试证据和有效/被拒绝的原始实验记录。旧机器的 docs/performance/stages/S0/manifest.json 仅用于追溯，不是新机器可直接执行的二进制快照。
+模型权重、编译产物、Python 环境和 `.artifacts/` 冻结二进制不上传 GitHub。仓库里保留源码、下载/转换脚本、固定模型版本配置、测试脚本和最终性能汇总。中间 JSON、日志、轨迹及原始实验记录只保存在本机被忽略的目录中。旧机器的 docs/performance/stages/S0/manifest.json 仅用于追溯，不是新机器可直接执行的二进制快照。
 
 ### 2. 准备工具和 Python 环境
 
@@ -143,7 +160,7 @@ python -u scripts/stage0_runner.py --stage "$LLM_BASELINE_STAGE" 2>&1 \
 
 ## 后续三个特性：必须按顺序做
 
-**S0 完整数据采齐后才开始 S1。** 每阶段先提交代码与正确性结果，再冻结本阶段的程序，空卡跑同一矩阵，记录正收益和退化。
+**S0 完整数据采齐后才开始 S1。** 每阶段完成代码与正确性验证后提交源码，再冻结程序，空卡跑同一矩阵，记录正收益和退化。正确性输出和原始性能数据保存在本机，只提交最终汇总。
 
 1. **S1 批量 prefill**：当前 `source/runtime/generation.cpp` 对每个 prompt token 分别执行模型。实现真正的 token 批量 QKV/FFN GEMM 与因果 Attention，保留逐 token 参考模式；逐步/最终 logits、greedy token、长短 prompt 和 GQA 都要对齐。主要观察 TTFT、prefill tokens/s、瞬时显存。
 2. **S2 CUDA Graph + 算子融合**：使用稳定输入/输出地址、设备端 position/token，处理 embedding 临时分配和采样同步等 capture 障碍；Graph 与 fusion 要能独立开关并做消融。区分首次捕获成本和预热后 decode，观察 TPOT、提交次数和端到端时间。
@@ -176,11 +193,3 @@ python scripts/compare_stages.py --baseline "$LLM_BASELINE_STAGE" \
 ## 给下一台机器上的代理的继续指令
 
 > 先读 AGENTS.md 和 docs/HANDOFF.md。继续原目标：在本机器重建四模型 S0，全部 GPU 性能测试仅在空卡运行，完成 36 场景原始基线后依次实现批量 prefill、CUDA Graph/融合、分页 KV。每阶段冻结版本、校验正确性、跑同样矩阵、记录改善或退化。旧机有 23/36 部分 S0 数据，不能跨 GPU 拼基线；模型和编译产物未进 Git，需要按文档重建。不要把已有集成和上游功能宣称为新优化，也不要缩小到只跑小模型。
-
-## 本机继续运行更新（2026-10-15）
-
-用户最新明确允许 WSL `/Xwayland` 桌面进程。此本机例外优先于上文旧机的严格门槛。四模型固定资产、本机构建和 CPU 对照已通过；本机 S0 使用 `scripts/gpu_policies/wsl_desktop.json` 重新冻结并运行。所有外部计算进程仍禁止，所有阶段使用同一规则。当前工作目录、运行标识、快照和队列状态详见 [LOCAL_MACHINE.md](performance/LOCAL_MACHINE.md)。
-
-本机继续进度：S0 和 S1 均已完成并审计 36/36；S1 的全部改善和退化见 [RESULTS.md](performance/stages/S1-Forward-20261015-163413-desktop/RESULTS.md)。当前工作为 S2，然后 S3；请读取本机 state.json 和 NEXT_STAGE_NOTES.md 继续。
-
-本机 S2 已完整完成四模型四套矩阵（144 场景 / 720 样本）及 112 项正确性校验，冻结源码 `35af606`。同后端消融和相对 S0/S1 的全部正负结果在本机 `docs/performance/stages/S2-Forward-20261015-163413-desktop/RESULTS.md`。当前进入 S3 真实分页 KV；保留新性能目录忽略规则和源码格式化，原始数据继续本地保存。

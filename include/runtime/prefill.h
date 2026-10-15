@@ -1,6 +1,7 @@
 #pragma once
 #include "base/cuda_config.h"
 #include "tensor/tensor.h"
+#include "runtime/kv_cache.h"
 #include <functional>
 #include <memory>
 #include <vector>
@@ -34,7 +35,7 @@ class CudaPrefill {
   CudaPrefill& operator=(const CudaPrefill&) = delete;
   void run(const std::vector<int32_t>& tokens, tensor::Tensor& logits,
            const tensor::Tensor& sin_cache, const tensor::Tensor& cos_cache,
-           tensor::Tensor& keys, tensor::Tensor& values, const LogitsCallback& callback);
+           KVCacheView cache, const LogitsCallback& callback);
  private:
   struct Impl;
   std::unique_ptr<Impl> impl_;

@@ -95,6 +95,7 @@ TEST(runtime_cuda, decode_graph_fusion_switches_and_capture_reuse) {
 #else
   model::LLama2Model model(base::TokenizerType::kEncodeSpe,tokenizer,path,false);
 #endif
+  if(const char* mode=std::getenv("LLAMA_TEST_KV_MODE")) ASSERT_TRUE(bool(model.configure_kv_cache(mode)));
   ASSERT_TRUE(bool(model.init(base::DeviceType::kDeviceCUDA)));
   for(int length:{1,33,129,8}){
     runtime::GenerationOptions options;options.max_new_tokens=8;options.ignore_eos=true;options.prefill_mode="batched";options.decode_mode="reference";

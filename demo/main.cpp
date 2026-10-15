@@ -50,7 +50,7 @@ void usage() {
   std::cout << "Usage: llama_infer CHECKPOINT TOKENIZER [--device cpu|cuda] [--prompt TEXT]\n"
                "       [--max-new-tokens N] [--json] [--quant] [--dump-logits FILE]\n"
                "       [--prompt-ids FILE] [--ignore-eos] [--warmup N] [--repeat N] [--prefill auto|batched|reference]\n"
-               "       [--decode auto|optimized|reference] [--cuda-graph on|off] [--fusion on|off]\n"
+               "       [--decode auto|optimized|reference] [--cuda-graph on|off] [--fusion on|off] [--kv-cache auto|paged|contiguous] [--kv-page-tokens N]\n"
                "Greedy decoding. JSON reports generated text, token IDs and separate TTFT/decode metrics.\n";
 }
 }
@@ -64,13 +64,15 @@ int main(int argc, char** argv) {
     bool json = false, quant = false;
     int repeats = 1, warmups = 0;
     std::string prompt_ids_path;
+    std::string kv_cache_mode = "auto";
+    int kv_page_tokens = 16;
     runtime::GenerationOptions options;
     for (int i = 3; i < argc; ++i) {
       std::string flag = argv[i];
       if (flag == "--json") { json = true; continue; }
       if (flag == "--quant") { quant = true; continue; }
       if (flag == "--ignore-eos") { options.ignore_eos = true; continue; }
-      if (flag != "--prompt" && flag != "--device" && flag != "--max-new-tokens" && flag != "--dump-logits" && flag != "--prompt-ids" && flag != "--repeat" && flag != "--warmup" && flag != "--prefill" && flag != "--decode" && flag != "--cuda-graph" && flag != "--fusion")
+      if (flag != "--prompt" && flag != "--device" && flag != "--max-new-tokens" && flag != "--dump-logits" && flag != "--prompt-ids" && flag != "--repeat" && flag != "--warmup" && flag != "--prefill" && flag != "--decode" && flag != "--cuda-graph" && flag != "--fusion" && flag != "--kv-cache" && flag != "--kv-page-tokens")
         throw std::invalid_argument("Unknown option: " + flag);
       if (++i == argc) throw std::invalid_argument("Missing value for " + flag);
       std::string value = argv[i];
@@ -78,6 +80,11 @@ int main(int argc, char** argv) {
       else if (flag == "--device") device = value;
       else if (flag == "--prefill") options.prefill_mode = value;
       else if (flag == "--decode") options.decode_mode = value;
+      else if (flag == "--kv-cache") kv_cache_mode = value;
+      else if (flag == "--kv-page-tokens") {
+        size_t end = 0; kv_page_tokens = std::stoi(value, &end);
+        if (end != value.size() || kv_page_tokens <= 0) throw std::invalid_argument("Invalid KV page size");
+      }
       else if (flag == "--cuda-graph" || flag == "--fusion") {
         if (value != "on" && value != "off") throw std::invalid_argument(flag + " must be on or off");
         if (flag == "--cuda-graph") options.cuda_graph = value == "on";
@@ -122,7 +129,9 @@ int main(int argc, char** argv) {
 #else
     model = std::make_unique<model::LLama2Model>(base::TokenizerType::kEncodeSpe, argv[2], argv[1], quant);
 #endif
-    auto status = model->init(device == "cpu" ? base::DeviceType::kDeviceCPU : base::DeviceType::kDeviceCUDA);
+    auto status = model->configure_kv_cache(kv_cache_mode, kv_page_tokens);
+    if (!status) throw std::runtime_error(status.get_err_msg());
+    status = model->init(device == "cpu" ? base::DeviceType::kDeviceCPU : base::DeviceType::kDeviceCUDA);
     if (!status) throw std::runtime_error(status.get_err_msg());
     if (device == "cuda") {
       auto error = cudaDeviceSynchronize();
@@ -177,6 +186,26 @@ int main(int argc, char** argv) {
                 << ",\"decode_graph_captures_total\":" << result.decode_stats.captures_total
                 << ",\"decode_packed_weight_bytes\":" << result.decode_stats.packed_weight_bytes
                 << ",\"decode_workspace_bytes\":" << result.decode_stats.workspace_bytes
+                << ",\"kv_cache_mode\":" << json_string(result.kv_stats.paged ? "paged" : "contiguous")
+                << ",\"kv_page_tokens\":" << result.kv_stats.page_tokens
+                << ",\"kv_logical_tokens\":" << result.kv_stats.logical_tokens
+                << ",\"kv_reserved_bytes\":" << result.kv_stats.reserved_bytes
+                << ",\"kv_mapped_bytes\":" << result.kv_stats.mapped_bytes
+                << ",\"kv_effective_bytes\":" << result.kv_stats.effective_bytes
+                << ",\"kv_table_bytes\":" << result.kv_stats.table_bytes
+                << ",\"kv_peak_mapped_bytes\":" << result.kv_stats.peak_mapped_bytes
+                << ",\"kv_peak_reserved_bytes\":" << result.kv_stats.peak_reserved_bytes
+                << ",\"kv_live_pages_end\":" << result.kv_stats.mapped_pages
+                << ",\"kv_free_pool_pages\":" << result.kv_stats.free_pages
+                << ",\"kv_page_allocations\":" << result.kv_stats.allocations
+                << ",\"kv_page_reuses\":" << result.kv_stats.reuses
+                << ",\"kv_page_releases\":" << result.kv_stats.releases
+                << ",\"kv_table_updates\":" << result.kv_stats.table_updates
+                << ",\"kv_table_clears\":" << result.kv_stats.table_clears
+                << ",\"kv_lifetime_allocations\":" << result.kv_stats.lifetime_allocations
+                << ",\"kv_lifetime_frees\":" << result.kv_stats.lifetime_frees
+                << ",\"kv_lifetime_trimmed_bytes\":" << result.kv_stats.lifetime_trimmed_bytes
+                << ",\"kv_release_ms\":" << result.kv_release_ms
                 << ",\"context_length\":" << model->context_length()
                 << ",\"iteration\":" << iteration
                 << ",\"warmup_requests\":" << warmups

@@ -1,23 +1,25 @@
 # Project handoff
 
-Read `docs/HANDOFF.md` before continuing this project. It records the user's full objective, actual validation status and exact commands for another machine.
+Read `docs/HANDOFF.md` and `docs/PERFORMANCE_RESULTS.md` before changing this project. Raw experiment data in `docs/performance/` is local and may be absent in a fresh clone.
 
-The completed local S0 remains frozen; S1/S2 are complete and current work is S3 true paged KV cache. The required order is: finish a complete empty-GPU baseline for all four registered models, then implement (1) batched prefill, (2) CUDA Graph plus operator fusion, (3) paged KV cache. Preserve each stage and record correctness and performance changes.
+## Completed objective
 
-Use `scripts/build_variants.py` for portable builds and `scripts/download_models.py` for pinned model assets. Models, build directories, virtual environments and `.artifacts/` are intentionally excluded from Git; recreate them on the target machine.
+The user-requested four-model sequence is complete: local S0 original baseline, S1 true batched prefill, S2 independent CUDA Graph/operator fusion, S3 actual paged KV. Every primary stage contains the complete 36-case registry on the same GPU UUID with identical fixed FP32 models and token IDs. S2 additionally has three full ablations; S3 has a full dense reference control. `scripts/audit_project.py` has revalidated all selected raw data: 288 cases / 1440 measured samples. A further 72-case r2 experiment and its regressions remain preserved.
 
-All GPU performance measurements must pass `scripts/empty_gpu.py` and use `scripts/benchmark_suite.py`. Never stop another user's GPU process. Compare complete workloads on the same GPU UUID with the same model hashes, precision and token IDs. Keep rejected/contaminated attempts as evidence; do not count them as valid data.
+Selected inference source revisions: S0 `f36fa56`, S1 `fffbc89`, S2 `35af606`, S3 `0aff906`. The r2 addressing experiment `cab953e` was not adopted because 34/36 paged decode cases regressed relative to the initial paging version. Current C++ implementation and build programs/private libraries have been restored to the selected S3 version; frozen artifacts remain immutable in `.artifacts/performance/`.
 
-The old machine's S0 results are partial (23/36) and its queue was stopped for migration. Use a new machine-specific stage name and do not overwrite published manifests. See `scripts/model_registry.json` for the full required workload matrix.
+## Workspace and retained evidence
 
-## Local user instruction, 2026-10-15
+Active worktree: `/home/forward/mycode/my_llm_inference_handoff`, branch `codex/local-staged-inference-20261015`. Original `/home/forward/mycode/my_llm_inference` main and its uncommitted user changes remain untouched.
 
-The user explicitly permits the existing WSL `/Xwayland` graphics process. On this local machine freeze every S0/S1/S2/S3 stage with `--gpu-policy scripts/gpu_policies/wsl_desktop.json`. This exception is graphics-only: all external compute clients and other non-exempt graphics clients remain forbidden. With the approved desktop present, aggregate memory/utilization counters are recorded rather than used as idle rejection thresholds. Freeze and compare the same explicit policy for every paired stage. The previous strict-policy local queue was stopped by us; its snapshot has zero accepted cases and is preserved. See `docs/performance/LOCAL_MACHINE.md` and `docs/performance/local-machine/state.json` for the current stage.
+Keep existing stage manifests, raw outputs, tokens, NVML traces, failed/contaminated attempts and r2 negative results. Keep `/docs/performance/` ignored and untracked. Never commit experiment JSON, logs, NVML traces, temporary state or failed-attempt outputs. Commit source, tests, reproducible configuration and the final human-readable summary only; do not create result-only checkpoint commits. Models, builds, virtual environment and `.artifacts/` also remain local. The final raw-data audit and export are `docs/performance/FINAL_AUDIT.json` and `ALL_STAGE_METRICS.csv`.
 
-Local S0 `S0-Forward-20261015-163413-desktop` is now complete and audited (36 cases / 180 samples on the same GPU). See its `audit.json` and `BASELINE.md`; continue with S1 batched prefill, then S2, then S3. Do not rerun or replace this completed baseline unless its frozen artifacts fail verification.
+## Reproduction rules
 
-Local S1 `S1-Forward-20261015-163413-desktop` is complete: four models, 28 full-logit correctness cases, zero-error batch memcheck, and 36 performance cases / 180 samples audited and paired with S0. See its `RESULTS.md`, `comparison.json`, and `audit.json`. Continue S2 (independent graph/fusion switches and ablations), then S3 true paged KV.
+Use `scripts/build_variants.py` for portable builds and `scripts/download_models.py` for fixed-revision/hash-verified assets. Registered scope is all four models and the full workload matrix in `scripts/model_registry.json`. Never combine the old machine's partial 23/36 data with this GPU's baseline.
 
-S2 implementation now passes all four models and four graph/fusion modes (112 full-logit cases, zero-error targeted memcheck). It is being frozen before primary and three complete ablation matrices. S3 must wait until those datasets are complete and compared.
+All GPU performance experiments must pass `scripts/empty_gpu.py` and use `scripts/benchmark_suite.py`; never stop another user's task. The user explicitly permits local `/Xwayland` graphics residency. Freeze every paired local stage with `--gpu-policy scripts/gpu_policies/wsl_desktop.json`; the exception is graphics-only and never permits external compute clients. Keep the policy, GPU UUID, model hashes, precision, input IDs, warmups and repeats identical across comparisons.
 
-Local S2 `S2-Forward-20261015-163413-desktop` is complete: 112 correctness comparisons, zero-error targeted memcheck, four complete 36-case matrices (144 cases / 720 samples) and seven complete paired comparisons. Its frozen inference revision is `35af606`; read local RESULTS.md/RESULTS.json. Current `.gitignore` excludes new docs/performance files; preserve that user change and keep raw artifacts locally. Runtime cpp formatting changes are user-owned and semantically token-equivalent to S2; retain them while implementing S3. Read docs/performance/S3_DESIGN.md for real pages, arbitrary mappings, Graph-compatible device table, native/dense reference and physical trim requirements.
+Paged KV uses separately allocated CUDA pages, a stable device translation table, on-demand growth and a reusable physical pool. Request release clears mappings and returns pages to the pool; explicit `Model::trim_kv_cache()` performs actual driver frees. Keep both native per-token and continuous-KV reference modes and all Graph/fusion switches functional. No continuous batching or shared-prefix serving scheduler is claimed.
+
+Verify pinned model assets when downloading them or when there is evidence they changed. Do not repeatedly hash unchanged multi-GB models or rerun full audits for Git/documentation cleanup.

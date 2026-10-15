@@ -81,6 +81,7 @@ TEST(runtime_cuda, batched_prefill_repeated_shorter_and_longer_requests) {
 #else
   model::LLama2Model model(base::TokenizerType::kEncodeSpe, tokenizer, path, false);
 #endif
+  if(const char* mode=std::getenv("LLAMA_TEST_KV_MODE")) ASSERT_TRUE(bool(model.configure_kv_cache(mode)));
   ASSERT_TRUE(bool(model.init(base::DeviceType::kDeviceCUDA)));
   for (int length : {1, 33, 129, 8, 1}) {
     runtime::GenerationOptions options; options.max_new_tokens = 8; options.ignore_eos = true;

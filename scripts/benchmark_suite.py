@@ -18,6 +18,9 @@ def summarize(samples,prompt_length):
  for name in ['load_ms','tokenization_ms','ttft_ms','prefill_ms','decode_ms','total_ms','decode_tokens_per_second','gpu_load_memory_bytes']:
   values=[s[name] for s in samples]
   metrics[name]={'median':statistics.median(values),'p95':quantile(values,.95),'min':min(values),'max':max(values)}
+ for name in ['kv_reserved_bytes','kv_effective_bytes','kv_table_bytes','kv_peak_mapped_bytes','kv_peak_reserved_bytes','kv_page_allocations','kv_page_reuses','kv_page_releases','kv_table_updates','kv_release_ms']:
+  if all(name in sample for sample in samples):
+   values=[sample[name] for sample in samples];metrics[name]={'median':statistics.median(values),'p95':quantile(values,.95),'min':min(values),'max':max(values)}
  per_token=[x for sample in samples for x in sample['decode_token_ms']]
  metrics['tpot_ms']={'median':statistics.median(per_token),'p95':quantile(per_token,.95),'p99':quantile(per_token,.99)}
  metrics['prefill_tokens_per_second']={'median':statistics.median(prompt_length*1000/s['prefill_ms'] for s in samples)}

@@ -1,6 +1,6 @@
 # my_llm_inference
 
-**换机器接着跑：先读 [完整交接文档](docs/HANDOFF.md)。** 当前四模型 CPU/CUDA 正确性已验证，原机器 S0 有效 23/36 场景，三个优化特性尚未实现。
+**换机器接着跑：先读 [完整交接文档](docs/HANDOFF.md)。** 本机 S0、S1 已各完成 36/36；S2 主矩阵与三套消融共 144 项已完成。S3 两种缓存模式的 224 项正确性和 72 项同卡主/参考矩阵已完成，全目标原始数据审计通过。最新状态见 [性能汇总](docs/PERFORMANCE_RESULTS.md)。
 
 基于 [KuiperLLama](https://github.com/zjhellofss/KuiperLLama) 的 C++20 / CUDA 推理项目。当前已跑通 **TinyStories 15M、Qwen2.5-0.5B-Instruct、Qwen3-0.6B、Llama3.2-1B-Instruct 的 FP32、单请求、贪心生成**，含权重加载、分词、模型前向、GQA/KV Cache、EOS/长度停止和数值对照。
 
@@ -25,6 +25,33 @@ QWEN_DEVICE=cpu OPENBLAS_NUM_THREADS=1 bash scripts/run_qwen_chat.sh '你好'
 ```
 
 `--json` 输出生成文本、prompt/generated token IDs、停止原因、模型加载耗时、TTFT、decode 吞吐。文本不包含 prompt 和终止标记；generated token IDs 保留 EOS，便于对齐。`--dump-logits FILE` 保存每次 forward 的 FP32 logits，仅用于正确性诊断，会干扰性能计时。
+
+
+最终结果见 [四阶段性能汇总](docs/PERFORMANCE_RESULTS.md)。实验 JSON、日志、NVML 轨迹和指标 CSV 仅保存在本机 `docs/performance/`，不提交 Git；未采用 r2 的负结果也保留在本机。
+
+## 优化与参考模式
+
+CUDA FP32 默认使用批量 prefill、Graph＋fusion decode 和按需分页 KV；CPU 与原量化路径保持参考执行。四模型使用相同接口：
+
+```bash
+# 默认累积优化路径
+./build/demo/llama_infer models/stories15M.bin models/tokenizer.model \
+  --device cuda --prompt 'Once upon a time' --max-new-tokens 64 --json
+
+# 显式保留原逐 token、连续 KV 参考路径
+./build/demo/llama_infer models/stories15M.bin models/tokenizer.model \
+  --device cuda --prefill reference --decode reference --kv-cache contiguous --json
+
+# 单独控制 Graph、fusion 或缓存策略
+./build/demo/llama_infer models/stories15M.bin models/tokenizer.model \
+  --device cuda --cuda-graph on --fusion off --kv-cache paged --kv-page-tokens 16 --json
+```
+
+`--prefill auto|batched|reference`、`--decode auto|optimized|reference`、`--cuda-graph on|off`、`--fusion on|off` 和 `--kv-cache auto|paged|contiguous` 可独立选择。JSON 同时记录实际执行模式、捕获/预热成本、Graph 次数、引擎提交数及实际/有效 KV 字节。
+
+分页模式按需为物理页单独分配 CUDA 内存，设备页表支持任意映射与跨页 Graph 重放。请求结束释放逻辑映射、物理页留池复用；`Model::trim_kv_cache()` 可实际释放未使用 CUDA 页。`kv_reserved_bytes` 是池保留页容量，`kv_effective_bytes` 是本请求实际处理 token 的 KV 字节，`kv_live_pages_end` 用于检查请求结束后的映射释放。两者与 NVML 设备采样分别记录。
+
+所有正式 GPU 测量都通过 `scripts/empty_gpu.py` / `scripts/benchmark_suite.py`。本机用户明确允许 `/Xwayland` 桌面驻留，使用冻结的 `scripts/gpu_policies/wsl_desktop.json`；其他计算任务仍拒绝且从不终止。性能目录按当前忽略规则保存在本机，阶段程序保存在 `.artifacts/performance/`。
 
 ## 从源码构建
 
@@ -51,14 +78,13 @@ cmake --preset qwen2
 cmake --build --preset qwen2 --target llama_infer test_llm -j 8
 ```
 
-`llama3`、`qwen3` 已通过真实权重的 CPU/CUDA 数值验证；正式 S0 全矩阵尚未完成，进展见 [交接状态](docs/performance/S0_PARTIAL.md)。模型变体的 RoPE、RMSNorm epsilon、tokenizer 与导出格式不同，每个构建只允许打开一个模型选项。不要用 Qwen/Llama3 构建读取 TinyStories 权重。
+`llama3`、`qwen3` 已通过固定真实权重的 CPU/CUDA 数值验证。本机四模型 S0 全 36 场景已独立采齐并审计；旧机的 23 项只作历史追溯，进展见 [性能汇总](docs/PERFORMANCE_RESULTS.md)。模型变体的 RoPE、RMSNorm epsilon、tokenizer 与导出格式不同，每个构建只允许打开一个模型选项。不要用 Qwen/Llama3 构建读取 TinyStories 权重。
 
 ## 模型下载与转换
 
 ```bash
-bash scripts/download_smoke_model.sh
-# 下载约 1 GB BF16 权重；导出后的 FP32 文件约 2 GB
-bash scripts/download_qwen2.sh
+python scripts/download_models.py
+# 四个模型均使用固定 HF revision、文件长度及 SHA256，导出同样的 FP32 文件。
 ```
 
 模型目录被 Git 忽略。Qwen 脚本固定了官方仓库 revision；直接从 safetensors 转换，仅需 NumPy，无需安装 transformers，也不重新加载训练模型。导出上下文默认设为 2048，以控制预分配 KV Cache 的占用；这不改变权重，可在导出命令中设定其他受支持长度。
@@ -85,7 +111,7 @@ OPENBLAS_NUM_THREADS=1 python3 scripts/verify_reference.py --device cuda
 OPENBLAS_NUM_THREADS=1 python3 scripts/verify_qwen2.py --device cuda
 ```
 
-当前机器的附加验证依赖安装在被忽略的 `build/validation-deps`，没有修改全局 Python 环境；这里可使用 `PYTHONPATH="$PWD/build/validation-deps"` 执行 Qwen 验证。
+本机验证依赖位于被忽略的 `.venv`；使用 `.venv/bin/python`，其中 PyTorch 为固定 CPU wheel，仅用于独立正确性参考。完整环境准备见 HANDOFF。
 
 ```bash
 # 旧脚本仅保留 CPU 微基准；正式 GPU 实验按 HANDOFF 建立本机阶段后使用 benchmark_suite.py
@@ -103,11 +129,11 @@ python3 scripts/benchmark.py --devices cpu
 - `scripts/verify_reference.py` / `verify_qwen2.py`：独立数值对照。
 - `docs/IMPROVEMENTS.md`：拟议改进、工作量、指标和简历表述边界。
 
-当前仍是单请求推理基线；没有 continuous batching、分页 KV、共享前缀缓存和正式服务调度。这些是下一轮可自行实现并通过实验展示的 AI Infra 亮点。
+当前仍为单请求推理，已加入真实批量 prefill、CUDA Graph decode、独立算子融合和分页 KV。continuous batching、共享前缀缓存及正式服务调度仍未实现。
 
 ## 分阶段优化与空卡实验
 
-当前目标依次为：采集完整 S0 原始基线、实现批量 prefill、实现 CUDA Graph/算子融合、实现分页 KV。新机器应先按 HANDOFF 设置 LLM_BASELINE_STAGE 并冻结本机版本，不能复用旧 S0 路径。完整计划和模型/长度矩阵见 [PLAN](docs/performance/PLAN.md)、[BRINGUP](docs/performance/BRINGUP.md)。旧的共享 GPU 数字只作历史记录。
+阶段顺序为 S0 原始基线、S1 批量 prefill、S2 CUDA Graph/算子融合、S3 分页 KV。本机已完成 S0/S1/S2，S3 已完成完整同卡性能重测和最终审计。换机器需按 HANDOFF 从对应冻结源码重建各阶段，并重新采集同一 GPU 的完整 S0，不能跨卡拼接比较。模型和长度矩阵见 `scripts/model_registry.json`，结果见 [性能汇总](docs/PERFORMANCE_RESULTS.md)。旧的共享 GPU 数字只作历史记录。
 
 ```bash
 # 全部变体使用同一套代码构建（复用本机缓存依赖）
@@ -122,4 +148,4 @@ PYTHONPATH="$PWD/build/validation-deps" OPENBLAS_NUM_THREADS=1 python3 scripts/v
 python3 scripts/benchmark_suite.py --stage "$LLM_BASELINE_STAGE" --wait-seconds 30
 ```
 
-空卡监控依赖 `nvidia-ml-py`，已安装在 `build/validation-deps`。无空卡时退出码 75，并保存占用证据；不会在繁忙 GPU 上降级测速。GPU 原始性能通过 `benchmark_suite.py` 收集，旧 `benchmark.py` 仅保留 CPU 用途。
+空卡监控依赖 `nvidia-ml-py`，已安装在 `.venv`。无空卡时退出码 75，并保存占用证据；不会在繁忙 GPU 上降级测速。GPU 原始性能通过 `benchmark_suite.py` 收集，旧 `benchmark.py` 仅保留 CPU 用途。

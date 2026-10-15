@@ -22,6 +22,12 @@ class Model {
   int32_t vocab_size() const { return config_->vocab_size_; }
   base::DeviceType device_type() const { return device_type_; }
   bool is_quantized() const { return is_quant_model_; }
+  base::Status configure_kv_cache(const std::string& mode, int page_tokens = 16);
+  base::Status begin_request() const;
+  base::Status end_request() const;
+  base::Status trim_kv_cache() const;
+  runtime::KVCacheView kv_cache_view() const;
+  runtime::KVCacheStats kv_cache_stats() const;
   virtual base::Status prefill(const std::vector<int32_t>& tokens,
       const std::function<void(int, const tensor::Tensor&)>& on_logits, int& next) const;
   virtual base::Status begin_decode(int token, int position, bool graph, bool fusion) const;
@@ -92,6 +98,16 @@ class Model {
   virtual void create_param_quant_layers() = 0;
 
  protected:
+  base::Status validate_kv_configuration() const;
+  void initialize_kv_cache(const std::shared_ptr<base::DeviceAllocator>& allocator,
+                           std::shared_ptr<kernel::CudaConfig> config);
+  void reserve_cache_tokens(int count) const;
+  std::string requested_kv_mode_ = "auto";
+  int kv_page_tokens_ = 16;
+  mutable int request_tokens_ = 0;
+  mutable bool request_active_ = false;
+  std::shared_ptr<kernel::CudaConfig> cache_config_;
+  mutable std::shared_ptr<runtime::PagedKVCache> paged_cache_;
   int32_t group_size_ = 1;
   bool is_quant_model_ = false;
   std::unique_ptr<TransformerConfig> config_;

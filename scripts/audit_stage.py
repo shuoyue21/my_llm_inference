@@ -4,6 +4,7 @@ import argparse
 import gzip
 import json
 import math
+import struct
 from pathlib import Path
 from benchmark_suite import summarize
 from empty_gpu import GpuMonitor
@@ -54,6 +55,42 @@ def validate_decode_metadata(sample, command, measured=True):
         require(sample['decode_host_submissions'] > 1 + 2 * count, 'Eager mode has implausible submission count')
     if measured:
         require(sample['graph_capture_ms'] == sample['graph_warmup_ms'] == 0, 'Capture/warmup was repeated after resident warmups')
+
+
+def validate_kv_metadata(sample, command, layers, context, kv_dim, measured=True):
+    if 'kv_cache_mode' not in sample:
+        return
+    def option(name, default):
+        value = default
+        for i in range(len(command) - 1):
+            if command[i] == name:
+                value = command[i + 1]
+        return value
+    logical = len(sample['prompt_tokens']) + len(sample['generated_tokens']) - 1 if sample['generated_tokens'] else 0
+    token_bytes = 2 * layers * kv_dim * 4
+    require(sample['kv_logical_tokens'] == logical, 'Incorrect effective KV token count')
+    require(sample['kv_effective_bytes'] == logical * token_bytes, 'Incorrect effective KV bytes')
+    require(math.isfinite(sample['kv_release_ms']) and sample['kv_release_ms'] >= 0, 'Invalid KV release cost')
+    paged = option('--kv-cache', 'auto') != 'contiguous'
+    require(sample['kv_cache_mode'] == ('paged' if paged else 'contiguous'), 'Requested/actual KV mode differs')
+    if paged:
+        size = sample['kv_page_tokens']
+        require(0 < size <= context and size == int(option('--kv-page-tokens', '16')), 'Unexpected physical page size')
+        pages = (logical + size - 1) // size
+        physical = pages * size * token_bytes
+        require(sample['kv_reserved_bytes'] == sample['kv_peak_reserved_bytes'] == sample['kv_peak_mapped_bytes'] == physical, 'Incorrect paged CUDA capacity')
+        require(sample['kv_table_bytes'] == ((context + size - 1) // size) * struct.calcsize('P'), 'Incorrect device page-table size')
+        require(sample['kv_mapped_bytes'] == sample['kv_live_pages_end'] == 0, 'Request pages were not released')
+        require(sample['kv_free_pool_pages'] == sample['kv_page_releases'] == pages, 'Page release/free-pool mismatch')
+        require(sample['kv_lifetime_allocations'] == pages and sample['kv_lifetime_frees'] == 0, 'Unexpected page allocation/trim behavior')
+        require(sample['kv_table_clears'] == 1 and 0 < sample['kv_table_updates'] <= pages, 'Page table was not maintained')
+        if measured:
+            require(sample['kv_page_allocations'] == 0 and sample['kv_page_reuses'] == pages, 'Resident warmups did not establish reusable pages')
+    else:
+        physical = context * token_bytes
+        require(sample['kv_reserved_bytes'] == sample['kv_mapped_bytes'] == physical, 'Dense reference capacity changed')
+        require(sample['kv_table_bytes'] == sample['kv_page_tokens'] == 0, 'Dense cache claimed page storage')
+        require(sample['kv_page_allocations'] == sample['kv_page_reuses'] == sample['kv_page_releases'] == 0, 'Dense reference used page pool')
 
 
 def audit(stage, uuid, label='cumulative'):
@@ -108,6 +145,9 @@ def audit(stage, uuid, label='cumulative'):
         require(record.get('extra_args', []) == summary.get('extra_args', []) and record.get('label', 'cumulative') == label, name + ': benchmark modes differ')
         require('--ignore-eos' in record['command'] and '--quant' not in record['command'], name + ': fixed FP32 generation flags changed')
         samples = record['samples']
+        with open(model['checkpoint'], 'rb') as source:
+            dim, _, layers, heads, kv_heads, _, context = struct.unpack('<7i', source.read(28))
+        kv_dim = dim * kv_heads // heads
         require(len(samples) == workload['repeats'] == 5, name + ': not five measured samples')
         ids = [model['seed_tokens'][i % len(model['seed_tokens'])] for i in range(prompt)]
         require(list(map(int, (data / (name + '.tokens')).read_text().split())) == ids, name + ': raw token file changed')
@@ -116,6 +156,7 @@ def audit(stage, uuid, label='cumulative'):
         for index, sample in enumerate(samples):
             require(sample['device'] == 'cuda' and sample['context_length'] == model['context'], name + ': device/context changed')
             validate_decode_metadata(sample, record['command'])
+            validate_kv_metadata(sample, record['command'], layers, context, kv_dim)
             require(sample['iteration'] == index and sample['warmup_requests'] == 2, name + ': iterations/warmups changed')
             require(sample['prompt_tokens'] == ids and len(sample['generated_tokens']) == generated, name + ': incorrect token counts')
             require(sample['generated_tokens'] == samples[0]['generated_tokens'], name + ': nondeterministic greedy tokens')

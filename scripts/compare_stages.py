@@ -34,6 +34,10 @@ def compare(base,current):
   changes['tpot_'+metric+'_ms']={'baseline':b,'current':c,'change_percent':100*(c/b-1)}
  b=base['monitor']['peak_sampled_device_memory_bytes']-base['before']['memory_used_bytes'];c=current['monitor']['peak_sampled_device_memory_bytes']-current['before']['memory_used_bytes']
  changes['sampled_peak_memory_increment_bytes']={'baseline':b,'current':c,'change_percent':100*(c/b-1) if b else None}
+ for metric in ['kv_reserved_bytes','kv_effective_bytes','kv_table_bytes','kv_peak_mapped_bytes','kv_release_ms']:
+  if metric in base['metrics'] and metric in current['metrics']:
+   b=base['metrics'][metric]['median'];c=current['metrics'][metric]['median']
+   changes[metric]={'baseline':b,'current':c,'change_percent':100*(c/b-1) if b else None}
  return changes
 
 def main():
