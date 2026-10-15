@@ -13,3 +13,9 @@
 `scripts/freeze_stage.py` 冻结推理程序、测试程序和核心动态库，记录代码版本、SHA256 与模型哈希。`scripts/benchmark_suite.py` 从冻结文件运行，结果按阶段、实验标签和 GPU UUID 分开保存；跨卡结果不能直接当作严格配对的改进。每次改进的对照要求同一 GPU UUID、模型哈希、token 输入、输出长度和精度；必要时在当前空卡重放 S0 冻结版本以建立配对。
 
 原来的 docs/benchmark_baseline.json 和 docs/benchmark_qwen2.json 是历史共享卡结果，**不计入本次空卡基线**。当前所有 GPU 有其他计算进程，等待自动选择空卡后，先完成四模型 GPU 正确性校验与 S0 完整矩阵，再开始特性 1。
+
+## 测量中断恢复
+
+外部 GPU 任务或 NVML 查询错误导致的污染会返回资源等待状态（退出码 75），队列重新选择空卡。被污染的场景及 stdout/stderr/NVML 原始记录移入 `attempts/` 保留；有效数据不会被覆盖，模型自身执行失败也不会被当成资源等待而无限重试。
+
+`source_revision` / `source_digest` 指向被冻结的推理版本。每条新测量额外记录 `harness.files` 中实际测速工具的 SHA256 和 `metric_definition_version`，因此测量工具的可靠性修复不会改变或冒充 S0 推理实现。S0 二进制、动态依赖和模型哈希保持不变。

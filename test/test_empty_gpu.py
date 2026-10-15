@@ -44,4 +44,36 @@ class PairingTests(unittest.TestCase):
   from compare_stages import compare
   base=self.record(10,100);current=self.record(5,200);current['samples'][0]['prompt_tokens'][0]=2
   with self.assertRaises(ValueError):compare(base,current)
+class RecoveryTests(unittest.TestCase):
+ def record(self,accepted,valid):
+  return {'source_digest':'source','gpu_uuid':'GPU-a','extra_args':[],'accepted':accepted,'monitor':{'valid':valid}}
+ def test_contaminated_attempt_is_preserved_before_retry(self):
+  import tempfile,json
+  from measurement_records import prepare_existing_result
+  with tempfile.TemporaryDirectory() as temp:
+   path=Path(temp)/'case.json';path.write_text(json.dumps(self.record(False,False)))
+   raw=Path(temp)/'case.stdout.jsonl';raw.write_text('partial output')
+   self.assertFalse(prepare_existing_result(path,'source','GPU-a',[]))
+   self.assertFalse(path.exists());self.assertFalse(raw.exists())
+   archived=list((Path(temp)/'attempts'/'case').glob('*/case.json'));self.assertEqual(len(archived),1)
+   self.assertEqual(archived[0].with_name('case.stdout.jsonl').read_text(),'partial output')
+ def test_valid_measurement_is_reused_without_overwrite(self):
+  import tempfile,json
+  from measurement_records import prepare_existing_result
+  with tempfile.TemporaryDirectory() as temp:
+   path=Path(temp)/'case.json';path.write_text(json.dumps(self.record(True,True)))
+   self.assertTrue(prepare_existing_result(path,'source','GPU-a',[]));self.assertTrue(path.exists())
+ def test_different_provenance_never_archived_as_contamination(self):
+  import tempfile,json
+  from measurement_records import prepare_existing_result
+  with tempfile.TemporaryDirectory() as temp:
+   path=Path(temp)/'case.json';path.write_text(json.dumps(self.record(False,False)))
+   with self.assertRaises(RuntimeError):prepare_existing_result(path,'different-source','GPU-a',[])
+   self.assertTrue(path.exists())
+ def test_model_failure_does_not_retry_as_resource_wait(self):
+  import tempfile,json
+  from measurement_records import prepare_existing_result
+  with tempfile.TemporaryDirectory() as temp:
+   path=Path(temp)/'case.json';path.write_text(json.dumps(self.record(False,True)))
+   with self.assertRaises(RuntimeError):prepare_existing_result(path,'source','GPU-a',[])
 if __name__=='__main__':unittest.main()

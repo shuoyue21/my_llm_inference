@@ -6,6 +6,7 @@ import argparse,datetime,gzip,hashlib,json,os,platform,statistics,subprocess,tim
 from pathlib import Path
 from empty_gpu import GpuMonitor,NoIdleGpu
 from freeze_stage import digest
+from measurement_records import harness_provenance,prepare_existing_result
 
 def quantile(values,q):
  x=sorted(values)
@@ -48,11 +49,8 @@ def main():
     for output_length in workload['generated_tokens']:
      if prompt_length+output_length-1>model['context']:continue
      name=f"{model['name']}_p{prompt_length}_g{output_length}";result_path=root/(name+'.json')
-     if result_path.exists():
-      prior=json.loads(result_path.read_text())
-      if prior.get('accepted') and prior['source_digest']==manifest['source_digest'] and prior['gpu_uuid']==monitor.uuid and prior.get('extra_args',[])==a.extra_arg:
-       completed.append(name);continue
-      raise RuntimeError('Existing measurement has different provenance: '+str(result_path))
+     if prepare_existing_result(result_path,manifest['source_digest'],monitor.uuid,a.extra_arg):
+      completed.append(name);continue
      latest=monitor.snapshot(monitor.handle)
      if not monitor.idle(latest):raise NoIdleGpu([latest])
      ids=[model['seed_tokens'][i%len(model['seed_tokens'])] for i in range(prompt_length)]
@@ -77,9 +75,11 @@ def main():
       if len(samples)!=workload['repeats']:reasons.append('wrong_sample_count')
       elif any(len(s['prompt_tokens'])!=prompt_length or len(s['generated_tokens'])!=output_length or len(s['decode_token_ms'])!=output_length-1 for s in samples):reasons.append('wrong_token_counts')
       elif any(s['prompt_tokens']!=ids or s['generated_tokens']!=samples[0]['generated_tokens'] for s in samples):reasons.append('nondeterministic_tokens')
-     record={'accepted':not reasons,'rejection_reasons':reasons,'stage':a.stage,'source_revision':manifest['source_revision'],'source_digest':manifest['source_digest'],'gpu_uuid':monitor.uuid,'precision':manifest['precision'],'model':model['name'],'prompt_tokens':prompt_length,'generated_tokens':output_length,'warmups':workload['warmups'],'repeats':workload['repeats'],'cpu_threads':workload['cpu_threads'],'command':command,'extra_args':a.extra_arg,'label':a.label,'environment':{k:env[k] for k in ['CUDA_VISIBLE_DEVICES','OPENBLAS_NUM_THREADS','OMP_NUM_THREADS','LD_LIBRARY_PATH']},'platform':platform.platform(),'cpu_affinity':sorted(os.sched_getaffinity(0)),'system_load_average':os.getloadavg(),'driver_version':__import__('pynvml').nvmlSystemGetDriverVersion(),'gate':gate,'before':latest,'monitor':{k:v for k,v in telemetry.items() if k!='samples'},'telemetry_file':str(trace_path),'samples':samples,'time_utc':datetime.datetime.now(datetime.timezone.utc).isoformat()}
+     record={'accepted':not reasons,'rejection_reasons':reasons,'stage':a.stage,'source_revision':manifest['source_revision'],'source_digest':manifest['source_digest'],'gpu_uuid':monitor.uuid,'precision':manifest['precision'],'model':model['name'],'prompt_tokens':prompt_length,'generated_tokens':output_length,'warmups':workload['warmups'],'repeats':workload['repeats'],'cpu_threads':workload['cpu_threads'],'harness':harness_provenance(),'command':command,'extra_args':a.extra_arg,'label':a.label,'environment':{k:env[k] for k in ['CUDA_VISIBLE_DEVICES','OPENBLAS_NUM_THREADS','OMP_NUM_THREADS','LD_LIBRARY_PATH']},'platform':platform.platform(),'cpu_affinity':sorted(os.sched_getaffinity(0)),'system_load_average':os.getloadavg(),'driver_version':__import__('pynvml').nvmlSystemGetDriverVersion(),'gate':gate,'before':latest,'monitor':{k:v for k,v in telemetry.items() if k!='samples'},'telemetry_file':str(trace_path),'samples':samples,'time_utc':datetime.datetime.now(datetime.timezone.utc).isoformat()}
      if record['accepted']:record['metrics']=summarize(samples,prompt_length)
      result_path.write_text(json.dumps(record,indent=2)+'\n')
+     if not telemetry['valid']:
+      raise NoIdleGpu(telemetry['samples'][-1:])
      if reasons:raise RuntimeError(name+' rejected: '+','.join(reasons))
      completed.append(name);print(json.dumps({'status':'accepted','case':name,'metrics':record['metrics']}),flush=True)
      # Wait for utilization counters to settle; process and memory gates remain mandatory.
