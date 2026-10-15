@@ -1,5 +1,7 @@
 # 完成范围与实测记录
 
+> 本文保留 2026-10-04 的历史记录；2026-10-15 的四模型 GPU 验证、空卡基线与迁移状态见 [HANDOFF](HANDOFF.md) 和 [S0_PARTIAL](performance/S0_PARTIAL.md)。
+
 本轮日期：2026-10-04。工作分支：`codex/complete-inference`。参考仓库通过重新 `git clone` 成功获取，固定为 `83030c894da046902c8134110eb70ed59cb49486`。
 
 ## 已完成

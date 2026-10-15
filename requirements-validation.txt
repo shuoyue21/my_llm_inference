@@ -1,0 +1,7 @@
+# Reference validation and GPU telemetry. The C++ inference runtime does not depend on Python.
+numpy==2.2.6
+safetensors==0.5.3
+tokenizers==0.21.4
+nvidia-ml-py==13.615.71
+# Install the tested CPU-only PyTorch wheel separately:
+# python -m pip install torch==2.7.1 --index-url https://download.pytorch.org/whl/cpu

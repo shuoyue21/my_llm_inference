@@ -20,6 +20,9 @@ def source_digest():
 
 def main():
  p=argparse.ArgumentParser(description=__doc__);p.add_argument('--stage',required=True);p.add_argument('--registry',type=Path,default=Path('scripts/model_registry.json'));a=p.parse_args()
+ if not re.fullmatch(r'[A-Za-z0-9][A-Za-z0-9_.-]*',a.stage):p.error('Invalid stage name')
+ record=Path('docs/performance/stages')/a.stage
+ if (record/'manifest.json').exists():raise SystemExit(f'{record}/manifest.json already exists; choose a new machine-specific stage name')
  folder=Path('.artifacts/performance')/a.stage
  if folder.exists():raise SystemExit(f'{folder} already exists; stage snapshots are immutable')
  registry=json.loads(a.registry.read_text());manifest={'stage':a.stage,'source_revision':subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip(),'source_digest':source_digest(),'precision':registry['precision'],'models':[],'workloads':registry['workloads']}

@@ -9,13 +9,10 @@
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Release",
         "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
-        "CMAKE_C_COMPILER": "/usr/bin/gcc",
-        "CMAKE_CXX_COMPILER": "/usr/bin/g++",
-        "CMAKE_CUDA_COMPILER": "/usr/local/cuda-12.1/bin/nvcc",
         "LLAMA3_SUPPORT": "OFF",
         "QWEN2_SUPPORT": "OFF",
         "QWEN3_SUPPORT": "OFF",
-        "CMAKE_CUDA_ARCHITECTURES": "89"
+        "CMAKE_CUDA_ARCHITECTURES": "native"
       }
     },
     {
@@ -26,13 +23,10 @@
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Release",
         "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
-        "CMAKE_C_COMPILER": "/usr/bin/gcc",
-        "CMAKE_CXX_COMPILER": "/usr/bin/g++",
-        "CMAKE_CUDA_COMPILER": "/usr/local/cuda-12.1/bin/nvcc",
         "LLAMA3_SUPPORT": "OFF",
         "QWEN2_SUPPORT": "OFF",
         "QWEN3_SUPPORT": "OFF",
-        "CMAKE_CUDA_ARCHITECTURES": "89"
+        "CMAKE_CUDA_ARCHITECTURES": "native"
       }
     },
     {

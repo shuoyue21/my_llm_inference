@@ -1,6 +1,8 @@
 # my_llm_inference
 
-基于 [KuiperLLama](https://github.com/zjhellofss/KuiperLLama) 的 C++20 / CUDA 推理项目。当前已跑通 **Llama 风格 TinyStories 15M 和 Qwen2.5-0.5B-Instruct 的 FP32、单请求、贪心生成**，含权重加载、分词、模型前向、GQA/KV Cache、EOS/长度停止和数值对照。
+**换机器接着跑：先读 [完整交接文档](docs/HANDOFF.md)。** 当前四模型 CPU/CUDA 正确性已验证，原机器 S0 有效 23/36 场景，三个优化特性尚未实现。
+
+基于 [KuiperLLama](https://github.com/zjhellofss/KuiperLLama) 的 C++20 / CUDA 推理项目。当前已跑通 **TinyStories 15M、Qwen2.5-0.5B-Instruct、Qwen3-0.6B、Llama3.2-1B-Instruct 的 FP32、单请求、贪心生成**，含权重加载、分词、模型前向、GQA/KV Cache、EOS/长度停止和数值对照。
 
 本轮保留原项目的 Tensor/Buffer/Layer，接入上游缺失模块，修正阻塞推理的实现，并新增 CLI、独立验证与性能基准。来源见 [UPSTREAM](docs/UPSTREAM.md)；结果见 [VALIDATION](docs/VALIDATION.md)；后续亮点见 [AI Infra 改进清单](docs/IMPROVEMENTS.md)。
 
@@ -33,7 +35,7 @@ cmake --preset default
 cmake --build --preset default --target llama_infer test_llm -j 8
 ```
 
-预设按本机配置使用 `/usr/local/cuda-12.1/bin/nvcc` 和架构 `89`。其他机器覆盖为实际路径/架构：
+预设从 CUDACXX/PATH 发现 CUDA，并使用当前机器的 native 架构（CMake >= 3.24）。也可通过构建脚本自动发现或显式指定编译器和架构：
 
 ```bash
 cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release \
@@ -49,7 +51,7 @@ cmake --preset qwen2
 cmake --build --preset qwen2 --target llama_infer test_llm -j 8
 ```
 
-`llama3`、`qwen3` 已增加真实权重的 CPU 数值验证；GPU 验证正在等待空卡，进展见 [分阶段实验](docs/performance/BRINGUP.md)。模型变体的 RoPE、RMSNorm epsilon、tokenizer 与导出格式不同，每个构建只允许打开一个模型选项。不要用 Qwen/Llama3 构建读取 TinyStories 权重。
+`llama3`、`qwen3` 已通过真实权重的 CPU/CUDA 数值验证；正式 S0 全矩阵尚未完成，进展见 [交接状态](docs/performance/S0_PARTIAL.md)。模型变体的 RoPE、RMSNorm epsilon、tokenizer 与导出格式不同，每个构建只允许打开一个模型选项。不要用 Qwen/Llama3 构建读取 TinyStories 权重。
 
 ## 模型下载与转换
 
@@ -86,9 +88,8 @@ OPENBLAS_NUM_THREADS=1 python3 scripts/verify_qwen2.py --device cuda
 当前机器的附加验证依赖安装在被忽略的 `build/validation-deps`，没有修改全局 Python 环境；这里可使用 `PYTHONPATH="$PWD/build/validation-deps"` 执行 Qwen 验证。
 
 ```bash
-# 每个后端先预热一次，再执行三次并保留原始数据
-python3 scripts/benchmark.py
-# 输出 docs/benchmark_baseline.json
+# 旧脚本仅保留 CPU 微基准；正式 GPU 实验按 HANDOFF 建立本机阶段后使用 benchmark_suite.py
+python3 scripts/benchmark.py --devices cpu
 ```
 
 吞吐指标排除模型加载与 prefill，decode tokens/s 使用首个生成 token 之后的 token 数 / decode 时间。TTFT 包含分词和 prompt 计算，不包含模型加载。这是单请求基线，不是并发服务吞吐。服务器有其他 GPU 负载，短序列和小模型的数字不能外推到大模型或生产环境。
@@ -106,11 +107,11 @@ python3 scripts/benchmark.py
 
 ## 分阶段优化与空卡实验
 
-当前目标依次为：跑通 Qwen3/Llama3、采集 S0 原始基线、实现批量 prefill、实现 CUDA Graph/算子融合、实现分页 KV。完整计划和模型/长度矩阵见 [PLAN](docs/performance/PLAN.md)、[BRINGUP](docs/performance/BRINGUP.md)。旧的共享 GPU 数字只作历史记录。
+当前目标依次为：采集完整 S0 原始基线、实现批量 prefill、实现 CUDA Graph/算子融合、实现分页 KV。新机器应先按 HANDOFF 设置 LLM_BASELINE_STAGE 并冻结本机版本，不能复用旧 S0 路径。完整计划和模型/长度矩阵见 [PLAN](docs/performance/PLAN.md)、[BRINGUP](docs/performance/BRINGUP.md)。旧的共享 GPU 数字只作历史记录。
 
 ```bash
 # 全部变体使用同一套代码构建（复用本机缓存依赖）
-python3 scripts/build_variants.py
+python3 scripts/build_variants.py --cuda-arch native
 # 新模型原始 safetensors -> FP32 legacy bin，保留正确 RoPE 配置
 python3 scripts/export_hf.py models/qwen3-0.6b models/qwen3-0.6b/model.bin --context 2048
 python3 scripts/export_hf.py models/llama3.2-1b-instruct models/llama3.2-1b-instruct/model.bin --context 2048
@@ -118,7 +119,7 @@ python3 scripts/export_hf.py models/llama3.2-1b-instruct models/llama3.2-1b-inst
 PYTHONPATH="$PWD/build/validation-deps" OPENBLAS_NUM_THREADS=1 python3 scripts/verify_hf.py \
   --binary build-qwen3/demo/llama_infer --model-dir models/qwen3-0.6b --device cpu
 # 空卡门槛与阶段基线（快照由 freeze_stage.py 创建，阶段不可覆盖）
-PYTHONPATH="$PWD/build/validation-deps" python3 scripts/benchmark_suite.py --stage S0 --wait-seconds 30
+python3 scripts/benchmark_suite.py --stage "$LLM_BASELINE_STAGE" --wait-seconds 30
 ```
 
 空卡监控依赖 `nvidia-ml-py`，已安装在 `build/validation-deps`。无空卡时退出码 75，并保存占用证据；不会在繁忙 GPU 上降级测速。GPU 原始性能通过 `benchmark_suite.py` 收集，旧 `benchmark.py` 仅保留 CPU 用途。

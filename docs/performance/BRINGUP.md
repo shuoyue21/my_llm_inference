@@ -12,7 +12,7 @@
 
 `scripts/freeze_stage.py` 冻结推理程序、测试程序和核心动态库，记录代码版本、SHA256 与模型哈希。`scripts/benchmark_suite.py` 从冻结文件运行，结果按阶段、实验标签和 GPU UUID 分开保存；跨卡结果不能直接当作严格配对的改进。每次改进的对照要求同一 GPU UUID、模型哈希、token 输入、输出长度和精度；必要时在当前空卡重放 S0 冻结版本以建立配对。
 
-原来的 docs/benchmark_baseline.json 和 docs/benchmark_qwen2.json 是历史共享卡结果，**不计入本次空卡基线**。当前所有 GPU 有其他计算进程，等待自动选择空卡后，先完成四模型 GPU 正确性校验与 S0 完整矩阵，再开始特性 1。
+原来的 docs/benchmark_baseline.json 和 docs/benchmark_qwen2.json 是历史共享卡结果，**不计入本次空卡基线**。四模型 GPU 正确性校验现已通过，S0 原机器完成 23/36 个有效场景后再次等待空卡；按用户迁移要求队列已停止。详见 [当前结果](S0_PARTIAL.md) 与 [换机交接](../HANDOFF.md)。新机器先采齐自己的完整 S0，再开始特性 1。
 
 ## 测量中断恢复
 

@@ -9,3 +9,5 @@ lib
 __pycache__/
 *.pyc
 .artifacts/
+.venv/
+CMakeUserPresets.json

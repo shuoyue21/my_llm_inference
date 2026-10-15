@@ -1,0 +1,3431 @@
+{
+  "accepted": true,
+  "rejection_reasons": [],
+  "stage": "S0",
+  "source_revision": "6d36c278612f6755f66973de4325db0cc064f44f",
+  "source_digest": "3ae7e3c700099acf5aece7debe517cf448e15c410567b925206e8bd9c8ca41dd",
+  "gpu_uuid": "GPU-65eb0868-8c9c-735a-db98-49ecae46b4a4",
+  "precision": "fp32",
+  "model": "qwen3-0.6b",
+  "prompt_tokens": 32,
+  "generated_tokens": 128,
+  "warmups": 2,
+  "repeats": 5,
+  "cpu_threads": 1,
+  "harness": {
+    "metric_definition_version": 1,
+    "files": {
+      "/data1/student/xbh/mycode/my_llm_inference/scripts/benchmark_suite.py": "7e166aaf374616cc440b782e298008de537f9ce399462682ca7f4cfce35fcba7",
+      "/data1/student/xbh/mycode/my_llm_inference/scripts/empty_gpu.py": "fccb2c6d0b8372921fcc6bb9994d2d12a765be87b6ebc1357e85e2ff0798ccd8",
+      "/data1/student/xbh/mycode/my_llm_inference/scripts/measurement_records.py": "1c018600d853c42e6512fa59c286e702f986600c82ab74cb80c5bb6e2e980d16",
+      "/data1/student/xbh/mycode/my_llm_inference/scripts/run_on_empty_gpu.py": "9e7fab73e5607b5583fa2d55eb2d29cbf39c5b6b4e88dd6ca2146f1f7dc7d271"
+    }
+  },
+  "command": [
+    "/data1/student/xbh/mycode/my_llm_inference/.artifacts/performance/S0/qwen3-0.6b/bin/llama_infer",
+    "models/qwen3-0.6b/model.bin",
+    "models/qwen3-0.6b/tokenizer.json",
+    "--device",
+    "cuda",
+    "--prompt-ids",
+    "docs/performance/stages/S0/cumulative/GPU-65eb0868-8c9c-735a-db98-49ecae46b4a4/qwen3-0.6b_p32_g128.tokens",
+    "--max-new-tokens",
+    "128",
+    "--ignore-eos",
+    "--warmup",
+    "2",
+    "--repeat",
+    "5",
+    "--json"
+  ],
+  "extra_args": [],
+  "label": "cumulative",
+  "environment": {
+    "CUDA_VISIBLE_DEVICES": "GPU-65eb0868-8c9c-735a-db98-49ecae46b4a4",
+    "OPENBLAS_NUM_THREADS": "1",
+    "OMP_NUM_THREADS": "1",
+    "LD_LIBRARY_PATH": "/data1/student/xbh/mycode/my_llm_inference/.artifacts/performance/S0/qwen3-0.6b/lib:/data1/student/xbh/.local/cuda-13.0/lib64:"
+  },
+  "platform": "Linux-6.5.0-18-generic-x86_64-with-glibc2.35",
+  "cpu_affinity": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18,
+    19,
+    20,
+    21,
+    22,
+    23,
+    24,
+    25,
+    26,
+    27,
+    28,
+    29,
+    30,
+    31,
+    32,
+    33,
+    34,
+    35,
+    36,
+    37,
+    38,
+    39,
+    40,
+    41,
+    42,
+    43,
+    44,
+    45,
+    46,
+    47,
+    48,
+    49,
+    50,
+    51,
+    52,
+    53,
+    54,
+    55,
+    56,
+    57,
+    58,
+    59,
+    60,
+    61,
+    62,
+    63
+  ],
+  "system_load_average": [
+    22.302734375,
+    23.11279296875,
+    22.3837890625
+  ],
+  "driver_version": "580.95.05",
+  "gate": [
+    {
+      "time_utc": "2026-10-15T07:41:25.117303+00:00",
+      "monotonic_ns": 379539846190428,
+      "uuid": "GPU-2fc1ac98-6248-c0db-2b5b-0197d2aca409",
+      "name": "NVIDIA GeForce RTX 4090",
+      "memory_used_bytes": 35699884032,
+      "memory_reserved_bytes": 662634496,
+      "memory_total_bytes": 51527024640,
+      "gpu_util_percent": 100,
+      "memory_util_percent": 75,
+      "processes": [
+        {
+          "pid": 123839,
+          "kinds": [
+            "compute"
+          ],
+          "used_memory_bytes": 3105882112,
+          "name": "/usr/bin/python3"
+        },
+        {
+          "pid": 1339201,
+          "kinds": [
+            "compute"
+          ],
+          "used_memory_bytes": 22326280192,
+          "name": "/tmp/revive-alfworld-env/bin/python"
+        },
+        {
+          "pid": 2208944,
+          "kinds": [
+            "compute"
+          ],
+          "used_memory_bytes": 10223616000,
+          "name": "/data1/student/fdq/anaconda3/envs/embodied-slam/bin/python"
+        },
+        {
+          "pid": 4037,
+          "kinds": [
+            "graphics"
+          ],
+          "used_memory_bytes": 4677632,
+          "name": "/usr/lib/xorg/Xorg"
+        }
+      ],
+      "temperature_c": 75,
+      "power_mw": 363215,
+      "sm_clock_mhz": 2625
+    },
+    {
+      "time_utc": "2026-10-15T07:41:25.133375+00:00",
+      "monotonic_ns": 379539862258540,
+      "uuid": "GPU-65eb0868-8c9c-735a-db98-49ecae46b4a4",
+      "name": "NVIDIA GeForce RTX 4090",
+      "memory_used_bytes": 27394048,
+      "memory_reserved_bytes": 662634496,
+      "memory_total_bytes": 51527024640,
+      "gpu_util_percent": 0,
+      "memory_util_percent": 0,
+      "processes": [
+        {
+          "pid": 4037,
+          "kinds": [
+            "graphics"
+          ],
+          "used_memory_bytes": 4677632,
+          "name": "/usr/lib/xorg/Xorg"
+        }
+      ],
+      "temperature_c": 44,
+      "power_mw": 36315,
+      "sm_clock_mhz": 210
+    },
+    {
+      "time_utc": "2026-10-15T07:41:25.149131+00:00",
+      "monotonic_ns": 379539878009408,
+      "uuid": "GPU-ab7ba07b-7a77-651b-0acc-825c3c61bce5",
+      "name": "NVIDIA GeForce RTX 4090",
+      "memory_used_bytes": 35286941696,
+      "memory_reserved_bytes": 662634496,
+      "memory_total_bytes": 51527024640,
+      "gpu_util_percent": 92,
+      "memory_util_percent": 37,
+      "processes": [
+        {
+          "pid": 2113824,
+          "kinds": [
+            "compute"
+          ],
+          "used_memory_bytes": 14849933312,
+          "name": "/data1/student/fdq/anaconda3/envs/embodied-slam/bin/python"
+        },
+        {
+          "pid": 2237314,
+          "kinds": [
+            "compute"
+          ],
+          "used_memory_bytes": 10196353024,
+          "name": "/data1/student/fdq/anaconda3/envs/embodied-slam/bin/python"
+        },
+        {
+          "pid": 2267880,
+          "kinds": [
+            "compute"
+          ],
+          "used_memory_bytes": 10196353024,
+          "name": "/data1/student/fdq/anaconda3/envs/embodied-slam/bin/python"
+        },
+        {
+          "pid": 4037,
+          "kinds": [
+            "graphics"
+          ],
+          "used_memory_bytes": 4677632,
+          "name": "/usr/lib/xorg/Xorg"
+        }
+      ],
+      "temperature_c": 64,
+      "power_mw": 287744,
+      "sm_clock_mhz": 2640
+    },
+    {
+      "time_utc": "2026-10-15T07:41:25.167320+00:00",
+      "monotonic_ns": 379539896197578,
+      "uuid": "GPU-b37a6ba9-5472-3c53-39f9-557b98ea7437",
+      "name": "NVIDIA GeForce RTX 4090",
+      "memory_used_bytes": 40865562624,
+      "memory_reserved_bytes": 662634496,
+      "memory_total_bytes": 51527024640,
+      "gpu_util_percent": 97,
+      "memory_util_percent": 40,
+      "processes": [
+        {
+          "pid": 1854165,
+          "kinds": [
+            "compute"
+          ],
+          "used_memory_bytes": 14849933312,
+          "name": "/data1/student/fdq/anaconda3/envs/embodied-slam/bin/python"
+        },
+        {
+          "pid": 2237313,
+          "kinds": [
+            "compute"
+          ],
+          "used_memory_bytes": 12985565184,
+          "name": "/data1/student/fdq/anaconda3/envs/embodied-slam/bin/python"
+        },
+        {
+          "pid": 2264137,
+          "kinds": [
+            "compute"
+          ],
+          "used_memory_bytes": 12985565184,
+          "name": "/data1/student/fdq/anaconda3/envs/embodied-slam/bin/python"
+        },
+        {
+          "pid": 4037,
+          "kinds": [
+            "graphics"
+          ],
+          "used_memory_bytes": 4677632,
+          "name": "/usr/lib/xorg/Xorg"
+        }
+      ],
+      "temperature_c": 69,
+      "power_mw": 302073,
+      "sm_clock_mhz": 2760
+    },
+    {
+      "time_utc": "2026-10-15T07:41:25.213311+00:00",
+      "monotonic_ns": 379539942187828,
+      "uuid": "GPU-ad37eef5-b84e-3feb-bc21-3b1646414a8f",
+      "name": "NVIDIA GeForce RTX 4090",
+      "memory_used_bytes": 47396356096,
+      "memory_reserved_bytes": 662634496,
+      "memory_total_bytes": 51527024640,
+      "gpu_util_percent": 43,
+      "memory_util_percent": 19,
+      "processes": [
+        {
+          "pid": 709069,
+          "kinds": [
+            "compute"
+          ],
+          "used_memory_bytes": 34372321280,
+          "name": "python3"
+        },
+        {
+          "pid": 2237315,
+          "kinds": [
+            "compute"
+          ],
+          "used_memory_bytes": 12985565184,
+          "name": "/data1/student/fdq/anaconda3/envs/embodied-slam/bin/python"
+        },
+        {
+          "pid": 4037,
+          "kinds": [
+            "graphics"
+          ],
+          "used_memory_bytes": 4677632,
+          "name": "/usr/lib/xorg/Xorg"
+        }
+      ],
+      "temperature_c": 56,
+      "power_mw": 183273,
+      "sm_clock_mhz": 2625
+    },
+    {
+      "time_utc": "2026-10-15T07:41:25.231918+00:00",
+      "monotonic_ns": 379539960794323,
+      "uuid": "GPU-b9c00326-f1ad-f9dc-8b6c-38579886d483",
+      "name": "NVIDIA GeForce RTX 4090",
+      "memory_used_bytes": 47747170304,
+      "memory_reserved_bytes": 662634496,
+      "memory_total_bytes": 51527024640,
+      "gpu_util_percent": 99,
+      "memory_util_percent": 53,
+      "processes": [
+        {
+          "pid": 2238960,
+          "kinds": [
+            "compute"
+          ],
+          "used_memory_bytes": 19881000960,
+          "name": "/data1/student/xbh/mycode/FlashVID/.venv/bin/python"
+        },
+        {
+          "pid": 2237311,
+          "kinds": [
+            "compute"
+          ],
+          "used_memory_bytes": 10196353024,
+          "name": "/data1/student/fdq/anaconda3/envs/embodied-slam/bin/python"
+        },
+        {
+          "pid": 2237310,
+          "kinds": [
+            "compute"
+          ],
+          "used_memory_bytes": 11561598976,
+          "name": "/data1/student/fdq/anaconda3/envs/embodied-slam/bin/python"
+        },
+        {
+          "pid": 2237309,
+          "kinds": [
+            "compute"
+          ],
+          "used_memory_bytes": 6058672128,
+          "name": "/data1/student/fdq/anaconda3/envs/embodied-slam/bin/python"
+        },
+        {
+          "pid": 4037,
+          "kinds": [
+            "graphics"
+          ],
+          "used_memory_bytes": 4677632,
+          "name": "/usr/lib/xorg/Xorg"
+        }
+      ],
+      "temperature_c": 77,
+      "power_mw": 375849,
+      "sm_clock_mhz": 2760
+    },
+    {
+      "time_utc": "2026-10-15T07:41:25.245205+00:00",
+      "monotonic_ns": 379539974081700,
+      "uuid": "GPU-a80c9d3e-f9ec-9e55-3fe3-21b1939941e2",
+      "name": "NVIDIA GeForce RTX 4090",
+      "memory_used_bytes": 45880639488,
+      "memory_reserved_bytes": 662634496,
+      "memory_total_bytes": 51527024640,
+      "gpu_util_percent": 100,
+      "memory_util_percent": 92,
+      "processes": [
+        {
+          "pid": 198758,
+          "kinds": [
+            "compute"
+          ],
+          "used_memory_bytes": 45845839872,
+          "name": "VLLM::Worker_TP0"
+        },
+        {
+          "pid": 4037,
+          "kinds": [
+            "graphics"
+          ],
+          "used_memory_bytes": 4677632,
+          "name": "/usr/lib/xorg/Xorg"
+        }
+      ],
+      "temperature_c": 68,
+      "power_mw": 339857,
+      "sm_clock_mhz": 2700
+    },
+    {
+      "time_utc": "2026-10-15T07:41:25.260869+00:00",
+      "monotonic_ns": 379539989745961,
+      "uuid": "GPU-081919b8-5ace-cba5-0ff8-12f61157f210",
+      "name": "NVIDIA GeForce RTX 4090",
+      "memory_used_bytes": 45341868032,
+      "memory_reserved_bytes": 662634496,
+      "memory_total_bytes": 51527024640,
+      "gpu_util_percent": 100,
+      "memory_util_percent": 93,
+      "processes": [
+        {
+          "pid": 198759,
+          "kinds": [
+            "compute"
+          ],
+          "used_memory_bytes": 45306871808,
+          "name": "VLLM::Worker_TP1"
+        },
+        {
+          "pid": 4037,
+          "kinds": [
+            "graphics"
+          ],
+          "used_memory_bytes": 4677632,
+          "name": "/usr/lib/xorg/Xorg"
+        }
+      ],
+      "temperature_c": 66,
+      "power_mw": 322257,
+      "sm_clock_mhz": 2700
+    },
+    {
+      "time_utc": "2026-10-15T07:41:25.773834+00:00",
+      "monotonic_ns": 379540502726333,
+      "uuid": "GPU-2fc1ac98-6248-c0db-2b5b-0197d2aca409",
+      "name": "NVIDIA GeForce RTX 4090",
+      "memory_used_bytes": 35699884032,
+      "memory_reserved_bytes": 662634496,
+      "memory_total_bytes": 51527024640,
+      "gpu_util_percent": 100,
+      "memory_util_percent": 74,
+      "processes": [
+        {
+          "pid": 123839,
+          "kinds": [
+            "compute"
+          ],
+          "used_memory_bytes": 3105882112,
+          "name": "/usr/bin/python3"
+        },
+        {
+          "pid": 1339201,
+          "kinds": [
+            "compute"
+          ],
+          "used_memory_bytes": 22326280192,
+          "name": "/tmp/revive-alfworld-env/bin/python"
+        },
+        {
+          "pid": 2208944,
+          "kinds": [
+            "compute"
+          ],
+          "used_memory_bytes": 10223616000,
+          "name": "/data1/student/fdq/anaconda3/envs/embodied-slam/bin/python"
+        },
+        {
+          "pid": 4037,
+          "kinds": [
+            "graphics"
+          ],
+          "used_memory_bytes": 4677632,
+          "name": "/usr/lib/xorg/Xorg"
+        }
+      ],
+      "temperature_c": 75,
+      "power_mw": 362977,
+      "sm_clock_mhz": 2625
+    },
+    {
+      "time_utc": "2026-10-15T07:41:25.774671+00:00",
+      "monotonic_ns": 379540503544709,
+      "uuid": "GPU-65eb0868-8c9c-735a-db98-49ecae46b4a4",
+      "name": "NVIDIA GeForce RTX 4090",
+      "memory_used_bytes": 27394048,
+      "memory_reserved_bytes": 662634496,
+      "memory_total_bytes": 51527024640,
+      "gpu_util_percent": 0,
+      "memory_util_percent": 0,
+      "processes": [
+        {
+          "pid": 4037,
+          "kinds": [
+            "graphics"
+          ],
+          "used_memory_bytes": 4677632,
+          "name": "/usr/lib/xorg/Xorg"
+        }
+      ],
+      "temperature_c": 44,
+      "power_mw": 32595,
+      "sm_clock_mhz": 210
+    },
+    {
+      "time_utc": "2026-10-15T07:41:25.776197+00:00",
+      "monotonic_ns": 379540505064577,
+      "uuid": "GPU-ab7ba07b-7a77-651b-0acc-825c3c61bce5",
+      "name": "NVIDIA GeForce RTX 4090",
+      "memory_used_bytes": 35286941696,
+      "memory_reserved_bytes": 662634496,
+      "memory_total_bytes": 51527024640,
+      "gpu_util_percent": 97,
+      "memory_util_percent": 37,
+      "processes": [
+        {
+          "pid": 2113824,
+          "kinds": [
+            "compute"
+          ],
+          "used_memory_bytes": 14849933312,
+          "name": "/data1/student/fdq/anaconda3/envs/embodied-slam/bin/python"
+        },
+        {
+          "pid": 2237314,
+          "kinds": [
+            "compute"
+          ],
+          "used_memory_bytes": 10196353024,
+          "name": "/data1/student/fdq/anaconda3/envs/embodied-slam/bin/python"
+        },
+        {
+          "pid": 2267880,
+          "kinds": [
+            "compute"
+          ],
+          "used_memory_bytes": 10196353024,
+          "name": "/data1/student/fdq/anaconda3/envs/embodied-slam/bin/python"
+        },
+        {
+          "pid": 4037,
+          "kinds": [
+            "graphics"
+          ],
+          "used_memory_bytes": 4677632,
+          "name": "/usr/lib/xorg/Xorg"
+        }
+      ],
+      "temperature_c": 65,
+      "power_mw": 288215,
+      "sm_clock_mhz": 2640
+    },
+    {
+      "time_utc": "2026-10-15T07:41:25.777357+00:00",
+      "monotonic_ns": 379540506223658,
+      "uuid": "GPU-b37a6ba9-5472-3c53-39f9-557b98ea7437",
+      "name": "NVIDIA GeForce RTX 4090",
+      "memory_used_bytes": 40865562624,
+      "memory_reserved_bytes": 662634496,
+      "memory_total_bytes": 51527024640,
+      "gpu_util_percent": 95,
+      "memory_util_percent": 29,
+      "processes": [
+        {
+          "pid": 1854165,
+          "kinds": [
+            "compute"
+          ],
+          "used_memory_bytes": 14849933312,
+          "name": "/data1/student/fdq/anaconda3/envs/embodied-slam/bin/python"
+        },
+        {
+          "pid": 2237313,
+          "kinds": [
+            "compute"
+          ],
+          "used_memory_bytes": 12985565184,
+          "name": "/data1/student/fdq/anaconda3/envs/embodied-slam/bin/python"
+        },
+        {
+          "pid": 2264137,
+          "kinds": [
+            "compute"
+          ],
+          "used_memory_bytes": 12985565184,
+          "name": "/data1/student/fdq/anaconda3/envs/embodied-slam/bin/python"
+        },
+        {
+          "pid": 4037,
+          "kinds": [
+            "graphics"
+          ],
+          "used_memory_bytes": 4677632,
+          "name": "/usr/lib/xorg/Xorg"
+        }
+      ],
+      "temperature_c": 67,
+      "power_mw": 298317,
+      "sm_clock_mhz": 2760
+    },
+    {
+      "time_utc": "2026-10-15T07:41:25.778151+00:00",
+      "monotonic_ns": 379540507016692,
+      "uuid": "GPU-ad37eef5-b84e-3feb-bc21-3b1646414a8f",
+      "name": "NVIDIA GeForce RTX 4090",
+      "memory_used_bytes": 47396356096,
+      "memory_reserved_bytes": 662634496,
+      "memory_total_bytes": 51527024640,
+      "gpu_util_percent": 38,
+      "memory_util_percent": 10,
+      "processes": [
+        {
+          "pid": 709069,
+          "kinds": [
+            "compute"
+          ],
+          "used_memory_bytes": 34372321280,
+          "name": "python3"
+        },
+        {
+          "pid": 2237315,
+          "kinds": [
+            "compute"
+          ],
+          "used_memory_bytes": 12985565184,
+          "name": "/data1/student/fdq/anaconda3/envs/embodied-slam/bin/python"
+        },
+        {
+          "pid": 4037,
+          "kinds": [
+            "graphics"
+          ],
+          "used_memory_bytes": 4677632,
+          "name": "/usr/lib/xorg/Xorg"
+        }
+      ],
+      "temperature_c": 55,
+      "power_mw": 179759,
+      "sm_clock_mhz": 2625
+    },
+    {
+      "time_utc": "2026-10-15T07:41:25.779286+00:00",
+      "monotonic_ns": 379540508152288,
+      "uuid": "GPU-b9c00326-f1ad-f9dc-8b6c-38579886d483",
+      "name": "NVIDIA GeForce RTX 4090",
+      "memory_used_bytes": 47747170304,
+      "memory_reserved_bytes": 662634496,
+      "memory_total_bytes": 51527024640,
+      "gpu_util_percent": 99,
+      "memory_util_percent": 53,
+      "processes": [
+        {
+          "pid": 2238960,
+          "kinds": [
+            "compute"
+          ],
+          "used_memory_bytes": 19881000960,
+          "name": "/data1/student/xbh/mycode/FlashVID/.venv/bin/python"
+        },
+        {
+          "pid": 2237311,
+          "kinds": [
+            "compute"
+          ],
+          "used_memory_bytes": 10196353024,
+          "name": "/data1/student/fdq/anaconda3/envs/embodied-slam/bin/python"
+        },
+        {
+          "pid": 2237310,
+          "kinds": [
+            "compute"
+          ],
+          "used_memory_bytes": 11561598976,
+          "name": "/data1/student/fdq/anaconda3/envs/embodied-slam/bin/python"
+        },
+        {
+          "pid": 2237309,
+          "kinds": [
+            "compute"
+          ],
+          "used_memory_bytes": 6058672128,
+          "name": "/data1/student/fdq/anaconda3/envs/embodied-slam/bin/python"
+        },
+        {
+          "pid": 4037,
+          "kinds": [
+            "graphics"
+          ],
+          "used_memory_bytes": 4677632,
+          "name": "/usr/lib/xorg/Xorg"
+        }
+      ],
+      "temperature_c": 78,
+      "power_mw": 375805,
+      "sm_clock_mhz": 2760
+    },
+    {
+      "time_utc": "2026-10-15T07:41:25.780416+00:00",
+      "monotonic_ns": 379540509282610,
+      "uuid": "GPU-a80c9d3e-f9ec-9e55-3fe3-21b1939941e2",
+      "name": "NVIDIA GeForce RTX 4090",
+      "memory_used_bytes": 45880639488,
+      "memory_reserved_bytes": 662634496,
+      "memory_total_bytes": 51527024640,
+      "gpu_util_percent": 100,
+      "memory_util_percent": 92,
+      "processes": [
+        {
+          "pid": 198758,
+          "kinds": [
+            "compute"
+          ],
+          "used_memory_bytes": 45845839872,
+          "name": "VLLM::Worker_TP0"
+        },
+        {
+          "pid": 4037,
+          "kinds": [
+            "graphics"
+          ],
+          "used_memory_bytes": 4677632,
+          "name": "/usr/lib/xorg/Xorg"
+        }
+      ],
+      "temperature_c": 69,
+      "power_mw": 340190,
+      "sm_clock_mhz": 2700
+    },
+    {
+      "time_utc": "2026-10-15T07:41:25.781308+00:00",
+      "monotonic_ns": 379540510173265,
+      "uuid": "GPU-081919b8-5ace-cba5-0ff8-12f61157f210",
+      "name": "NVIDIA GeForce RTX 4090",
+      "memory_used_bytes": 45341868032,
+      "memory_reserved_bytes": 662634496,
+      "memory_total_bytes": 51527024640,
+      "gpu_util_percent": 100,
+      "memory_util_percent": 93,
+      "processes": [
+        {
+          "pid": 198759,
+          "kinds": [
+            "compute"
+          ],
+          "used_memory_bytes": 45306871808,
+          "name": "VLLM::Worker_TP1"
+        },
+        {
+          "pid": 4037,
+          "kinds": [
+            "graphics"
+          ],
+          "used_memory_bytes": 4677632,
+          "name": "/usr/lib/xorg/Xorg"
+        }
+      ],
+      "temperature_c": 66,
+      "power_mw": 322254,
+      "sm_clock_mhz": 2700
+    },
+    {
+      "time_utc": "2026-10-15T07:41:26.294325+00:00",
+      "monotonic_ns": 379541023205784,
+      "uuid": "GPU-2fc1ac98-6248-c0db-2b5b-0197d2aca409",
+      "name": "NVIDIA GeForce RTX 4090",
+      "memory_used_bytes": 35699884032,
+      "memory_reserved_bytes": 662634496,
+      "memory_total_bytes": 51527024640,
+      "gpu_util_percent": 100,
+      "memory_util_percent": 74,
+      "processes": [
+        {
+          "pid": 123839,
+          "kinds": [
+            "compute"
+          ],
+          "used_memory_bytes": 3105882112,
+          "name": "/usr/bin/python3"
+        },
+        {
+          "pid": 1339201,
+          "kinds": [
+            "compute"
+          ],
+          "used_memory_bytes": 22326280192,
+          "name": "/tmp/revive-alfworld-env/bin/python"
+        },
+        {
+          "pid": 2208944,
+          "kinds": [
+            "compute"
+          ],
+          "used_memory_bytes": 10223616000,
+          "name": "/data1/student/fdq/anaconda3/envs/embodied-slam/bin/python"
+        },
+        {
+          "pid": 4037,
+          "kinds": [
+            "graphics"
+          ],
+          "used_memory_bytes": 4677632,
+          "name": "/usr/lib/xorg/Xorg"
+        }
+      ],
+      "temperature_c": 75,
+      "power_mw": 363576,
+      "sm_clock_mhz": 2625
+    },
+    {
+      "time_utc": "2026-10-15T07:41:26.301723+00:00",
+      "monotonic_ns": 379541030596454,
+      "uuid": "GPU-65eb0868-8c9c-735a-db98-49ecae46b4a4",
+      "name": "NVIDIA GeForce RTX 4090",
+      "memory_used_bytes": 27394048,
+      "memory_reserved_bytes": 662634496,
+      "memory_total_bytes": 51527024640,
+      "gpu_util_percent": 0,
+      "memory_util_percent": 0,
+      "processes": [
+        {
+          "pid": 4037,
+          "kinds": [
+            "graphics"
+          ],
+          "used_memory_bytes": 4677632,
+          "name": "/usr/lib/xorg/Xorg"
+        }
+      ],
+      "temperature_c": 44,
+      "power_mw": 30790,
+      "sm_clock_mhz": 210
+    },
+    {
+      "time_utc": "2026-10-15T07:41:26.317813+00:00",
+      "monotonic_ns": 379541046693561,
+      "uuid": "GPU-ab7ba07b-7a77-651b-0acc-825c3c61bce5",
+      "name": "NVIDIA GeForce RTX 4090",
+      "memory_used_bytes": 35286941696,
+      "memory_reserved_bytes": 662634496,
+      "memory_total_bytes": 51527024640,
+      "gpu_util_percent": 97,
+      "memory_util_percent": 37,
+      "processes": [
+        {
+          "pid": 2113824,
+          "kinds": [
+            "compute"
+          ],
+          "used_memory_bytes": 14849933312,
+          "name": "/data1/student/fdq/anaconda3/envs/embodied-slam/bin/python"
+        },
+        {
+          "pid": 2237314,
+          "kinds": [
+            "compute"
+          ],
+          "used_memory_bytes": 10196353024,
+          "name": "/data1/student/fdq/anaconda3/envs/embodied-slam/bin/python"
+        },
+        {
+          "pid": 2267880,
+          "kinds": [
+            "compute"
+          ],
+          "used_memory_bytes": 10196353024,
+          "name": "/data1/student/fdq/anaconda3/envs/embodied-slam/bin/python"
+        },
+        {
+          "pid": 4037,
+          "kinds": [
+            "graphics"
+          ],
+          "used_memory_bytes": 4677632,
+          "name": "/usr/lib/xorg/Xorg"
+        }
+      ],
+      "temperature_c": 67,
+      "power_mw": 302534,
+      "sm_clock_mhz": 2640
+    },
+    {
+      "time_utc": "2026-10-15T07:41:26.319607+00:00",
+      "monotonic_ns": 379541048482322,
+      "uuid": "GPU-b37a6ba9-5472-3c53-39f9-557b98ea7437",
+      "name": "NVIDIA GeForce RTX 4090",
+      "memory_used_bytes": 40865562624,
+      "memory_reserved_bytes": 662634496,
+      "memory_total_bytes": 51527024640,
+      "gpu_util_percent": 95,
+      "memory_util_percent": 29,
+      "processes": [
+        {
+          "pid": 1854165,
+          "kinds": [
+            "compute"
+          ],
+          "used_memory_bytes": 14849933312,
+          "name": "/data1/student/fdq/anaconda3/envs/embodied-slam/bin/python"
+        },
+        {
+          "pid": 2237313,
+          "kinds": [
+            "compute"
+          ],
+          "used_memory_bytes": 12985565184,
+          "name": "/data1/student/fdq/anaconda3/envs/embodied-slam/bin/python"
+        },
+        {
+          "pid": 2264137,
+          "kinds": [
+            "compute"
+          ],
+          "used_memory_bytes": 12985565184,
+          "name": "/data1/student/fdq/anaconda3/envs/embodied-slam/bin/python"
+        },
+        {
+          "pid": 4037,
+          "kinds": [
+            "graphics"
+          ],
+          "used_memory_bytes": 4677632,
+          "name": "/usr/lib/xorg/Xorg"
+        }
+      ],
+      "temperature_c": 69,
+      "power_mw": 305242,
+      "sm_clock_mhz": 2760
+    },
+    {
+      "time_utc": "2026-10-15T07:41:26.320981+00:00",
+      "monotonic_ns": 379541049854744,
+      "uuid": "GPU-ad37eef5-b84e-3feb-bc21-3b1646414a8f",
+      "name": "NVIDIA GeForce RTX 4090",
+      "memory_used_bytes": 47396356096,
+      "memory_reserved_bytes": 662634496,
+      "memory_total_bytes": 51527024640,
+      "gpu_util_percent": 38,
+      "memory_util_percent": 10,
+      "processes": [
+        {
+          "pid": 709069,
+          "kinds": [
+            "compute"
+          ],
+          "used_memory_bytes": 34372321280,
+          "name": "python3"
+        },
+        {
+          "pid": 2237315,
+          "kinds": [
+            "compute"
+          ],
+          "used_memory_bytes": 12985565184,
+          "name": "/data1/student/fdq/anaconda3/envs/embodied-slam/bin/python"
+        },
+        {
+          "pid": 4037,
+          "kinds": [
+            "graphics"
+          ],
+          "used_memory_bytes": 4677632,
+          "name": "/usr/lib/xorg/Xorg"
+        }
+      ],
+      "temperature_c": 55,
+      "power_mw": 183965,
+      "sm_clock_mhz": 2625
+    },
+    {
+      "time_utc": "2026-10-15T07:41:26.322935+00:00",
+      "monotonic_ns": 379541051806865,
+      "uuid": "GPU-b9c00326-f1ad-f9dc-8b6c-38579886d483",
+      "name": "NVIDIA GeForce RTX 4090",
+      "memory_used_bytes": 47747170304,
+      "memory_reserved_bytes": 662634496,
+      "memory_total_bytes": 51527024640,
+      "gpu_util_percent": 100,
+      "memory_util_percent": 37,
+      "processes": [
+        {
+          "pid": 2238960,
+          "kinds": [
+            "compute"
+          ],
+          "used_memory_bytes": 19881000960,
+          "name": "/data1/student/xbh/mycode/FlashVID/.venv/bin/python"
+        },
+        {
+          "pid": 2237311,
+          "kinds": [
+            "compute"
+          ],
+          "used_memory_bytes": 10196353024,
+          "name": "/data1/student/fdq/anaconda3/envs/embodied-slam/bin/python"
+        },
+        {
+          "pid": 2237310,
+          "kinds": [
+            "compute"
+          ],
+          "used_memory_bytes": 11561598976,
+          "name": "/data1/student/fdq/anaconda3/envs/embodied-slam/bin/python"
+        },
+        {
+          "pid": 2237309,
+          "kinds": [
+            "compute"
+          ],
+          "used_memory_bytes": 6058672128,
+          "name": "/data1/student/fdq/anaconda3/envs/embodied-slam/bin/python"
+        },
+        {
+          "pid": 4037,
+          "kinds": [
+            "graphics"
+          ],
+          "used_memory_bytes": 4677632,
+          "name": "/usr/lib/xorg/Xorg"
+        }
+      ],
+      "temperature_c": 78,
+      "power_mw": 383102,
+      "sm_clock_mhz": 2775
+    },
+    {
+      "time_utc": "2026-10-15T07:41:26.324838+00:00",
+      "monotonic_ns": 379541053712191,
+      "uuid": "GPU-a80c9d3e-f9ec-9e55-3fe3-21b1939941e2",
+      "name": "NVIDIA GeForce RTX 4090",
+      "memory_used_bytes": 45880639488,
+      "memory_reserved_bytes": 662634496,
+      "memory_total_bytes": 51527024640,
+      "gpu_util_percent": 100,
+      "memory_util_percent": 92,
+      "processes": [
+        {
+          "pid": 198758,
+          "kinds": [
+            "compute"
+          ],
+          "used_memory_bytes": 45845839872,
+          "name": "VLLM::Worker_TP0"
+        },
+        {
+          "pid": 4037,
+          "kinds": [
+            "graphics"
+          ],
+          "used_memory_bytes": 4677632,
+          "name": "/usr/lib/xorg/Xorg"
+        }
+      ],
+      "temperature_c": 68,
+      "power_mw": 340478,
+      "sm_clock_mhz": 2700
+    },
+    {
+      "time_utc": "2026-10-15T07:41:26.326427+00:00",
+      "monotonic_ns": 379541055299021,
+      "uuid": "GPU-081919b8-5ace-cba5-0ff8-12f61157f210",
+      "name": "NVIDIA GeForce RTX 4090",
+      "memory_used_bytes": 45341868032,
+      "memory_reserved_bytes": 662634496,
+      "memory_total_bytes": 51527024640,
+      "gpu_util_percent": 100,
+      "memory_util_percent": 93,
+      "processes": [
+        {
+          "pid": 198759,
+          "kinds": [
+            "compute"
+          ],
+          "used_memory_bytes": 45306871808,
+          "name": "VLLM::Worker_TP1"
+        },
+        {
+          "pid": 4037,
+          "kinds": [
+            "graphics"
+          ],
+          "used_memory_bytes": 4677632,
+          "name": "/usr/lib/xorg/Xorg"
+        }
+      ],
+      "temperature_c": 66,
+      "power_mw": 321993,
+      "sm_clock_mhz": 2700
+    },
+    {
+      "time_utc": "2026-10-15T07:41:26.828573+00:00",
+      "monotonic_ns": 379541557457055,
+      "uuid": "GPU-2fc1ac98-6248-c0db-2b5b-0197d2aca409",
+      "name": "NVIDIA GeForce RTX 4090",
+      "memory_used_bytes": 35699884032,
+      "memory_reserved_bytes": 662634496,
+      "memory_total_bytes": 51527024640,
+      "gpu_util_percent": 100,
+      "memory_util_percent": 75,
+      "processes": [
+        {
+          "pid": 123839,
+          "kinds": [
+            "compute"
+          ],
+          "used_memory_bytes": 3105882112,
+          "name": "/usr/bin/python3"
+        },
+        {
+          "pid": 1339201,
+          "kinds": [
+            "compute"
+          ],
+          "used_memory_bytes": 22326280192,
+          "name": "/tmp/revive-alfworld-env/bin/python"
+        },
+        {
+          "pid": 2208944,
+          "kinds": [
+            "compute"
+          ],
+          "used_memory_bytes": 10223616000,
+          "name": "/data1/student/fdq/anaconda3/envs/embodied-slam/bin/python"
+        },
+        {
+          "pid": 4037,
+          "kinds": [
+            "graphics"
+          ],
+          "used_memory_bytes": 4677632,
+          "name": "/usr/lib/xorg/Xorg"
+        }
+      ],
+      "temperature_c": 75,
+      "power_mw": 364389,
+      "sm_clock_mhz": 2625
+    },
+    {
+      "time_utc": "2026-10-15T07:41:26.829212+00:00",
+      "monotonic_ns": 379541558082048,
+      "uuid": "GPU-65eb0868-8c9c-735a-db98-49ecae46b4a4",
+      "name": "NVIDIA GeForce RTX 4090",
+      "memory_used_bytes": 27394048,
+      "memory_reserved_bytes": 662634496,
+      "memory_total_bytes": 51527024640,
+      "gpu_util_percent": 0,
+      "memory_util_percent": 0,
+      "processes": [
+        {
+          "pid": 4037,
+          "kinds": [
+            "graphics"
+          ],
+          "used_memory_bytes": 4677632,
+          "name": "/usr/lib/xorg/Xorg"
+        }
+      ],
+      "temperature_c": 43,
+      "power_mw": 30790,
+      "sm_clock_mhz": 210
+    },
+    {
+      "time_utc": "2026-10-15T07:41:26.830791+00:00",
+      "monotonic_ns": 379541559661409,
+      "uuid": "GPU-ab7ba07b-7a77-651b-0acc-825c3c61bce5",
+      "name": "NVIDIA GeForce RTX 4090",
+      "memory_used_bytes": 35286941696,
+      "memory_reserved_bytes": 662634496,
+      "memory_total_bytes": 51527024640,
+      "gpu_util_percent": 100,
+      "memory_util_percent": 50,
+      "processes": [
+        {
+          "pid": 2113824,
+          "kinds": [
+            "compute"
+          ],
+          "used_memory_bytes": 14849933312,
+          "name": "/data1/student/fdq/anaconda3/envs/embodied-slam/bin/python"
+        },
+        {
+          "pid": 2237314,
+          "kinds": [
+            "compute"
+          ],
+          "used_memory_bytes": 10196353024,
+          "name": "/data1/student/fdq/anaconda3/envs/embodied-slam/bin/python"
+        },
+        {
+          "pid": 2267880,
+          "kinds": [
+            "compute"
+          ],
+          "used_memory_bytes": 10196353024,
+          "name": "/data1/student/fdq/anaconda3/envs/embodied-slam/bin/python"
+        },
+        {
+          "pid": 4037,
+          "kinds": [
+            "graphics"
+          ],
+          "used_memory_bytes": 4677632,
+          "name": "/usr/lib/xorg/Xorg"
+        }
+      ],
+      "temperature_c": 68,
+      "power_mw": 323627,
+      "sm_clock_mhz": 2640
+    },
+    {
+      "time_utc": "2026-10-15T07:41:26.832400+00:00",
+      "monotonic_ns": 379541561270772,
+      "uuid": "GPU-b37a6ba9-5472-3c53-39f9-557b98ea7437",
+      "name": "NVIDIA GeForce RTX 4090",
+      "memory_used_bytes": 40865562624,
+      "memory_reserved_bytes": 662634496,
+      "memory_total_bytes": 51527024640,
+      "gpu_util_percent": 87,
+      "memory_util_percent": 28,
+      "processes": [
+        {
+          "pid": 1854165,
+          "kinds": [
+            "compute"
+          ],
+          "used_memory_bytes": 14849933312,
+          "name": "/data1/student/fdq/anaconda3/envs/embodied-slam/bin/python"
+        },
+        {
+          "pid": 2237313,
+          "kinds": [
+            "compute"
+          ],
+          "used_memory_bytes": 12985565184,
+          "name": "/data1/student/fdq/anaconda3/envs/embodied-slam/bin/python"
+        },
+        {
+          "pid": 2264137,
+          "kinds": [
+            "compute"
+          ],
+          "used_memory_bytes": 12985565184,
+          "name": "/data1/student/fdq/anaconda3/envs/embodied-slam/bin/python"
+        },
+        {
+          "pid": 4037,
+          "kinds": [
+            "graphics"
+          ],
+          "used_memory_bytes": 4677632,
+          "name": "/usr/lib/xorg/Xorg"
+        }
+      ],
+      "temperature_c": 66,
+      "power_mw": 300195,
+      "sm_clock_mhz": 2760
+    },
+    {
+      "time_utc": "2026-10-15T07:41:26.833539+00:00",
+      "monotonic_ns": 379541562408346,
+      "uuid": "GPU-ad37eef5-b84e-3feb-bc21-3b1646414a8f",
+      "name": "NVIDIA GeForce RTX 4090",
+      "memory_used_bytes": 47396356096,
+      "memory_reserved_bytes": 662634496,
+      "memory_total_bytes": 51527024640,
+      "gpu_util_percent": 46,
+      "memory_util_percent": 20,
+      "processes": [
+        {
+          "pid": 709069,
+          "kinds": [
+            "compute"
+          ],
+          "used_memory_bytes": 34372321280,
+          "name": "python3"
+        },
+        {
+          "pid": 2237315,
+          "kinds": [
+            "compute"
+          ],
+          "used_memory_bytes": 12985565184,
+          "name": "/data1/student/fdq/anaconda3/envs/embodied-slam/bin/python"
+        },
+        {
+          "pid": 4037,
+          "kinds": [
+            "graphics"
+          ],
+          "used_memory_bytes": 4677632,
+          "name": "/usr/lib/xorg/Xorg"
+        }
+      ],
+      "temperature_c": 58,
+      "power_mw": 180921,
+      "sm_clock_mhz": 2625
+    },
+    {
+      "time_utc": "2026-10-15T07:41:26.835076+00:00",
+      "monotonic_ns": 379541563945165,
+      "uuid": "GPU-b9c00326-f1ad-f9dc-8b6c-38579886d483",
+      "name": "NVIDIA GeForce RTX 4090",
+      "memory_used_bytes": 47747170304,
+      "memory_reserved_bytes": 662634496,
+      "memory_total_bytes": 51527024640,
+      "gpu_util_percent": 100,
+      "memory_util_percent": 37,
+      "processes": [
+        {
+          "pid": 2238960,
+          "kinds": [
+            "compute"
+          ],
+          "used_memory_bytes": 19881000960,
+          "name": "/data1/student/xbh/mycode/FlashVID/.venv/bin/python"
+        },
+        {
+          "pid": 2237311,
+          "kinds": [
+            "compute"
+          ],
+          "used_memory_bytes": 10196353024,
+          "name": "/data1/student/fdq/anaconda3/envs/embodied-slam/bin/python"
+        },
+        {
+          "pid": 2237310,
+          "kinds": [
+            "compute"
+          ],
+          "used_memory_bytes": 11561598976,
+          "name": "/data1/student/fdq/anaconda3/envs/embodied-slam/bin/python"
+        },
+        {
+          "pid": 2237309,
+          "kinds": [
+            "compute"
+          ],
+          "used_memory_bytes": 6058672128,
+          "name": "/data1/student/fdq/anaconda3/envs/embodied-slam/bin/python"
+        },
+        {
+          "pid": 4037,
+          "kinds": [
+            "graphics"
+          ],
+          "used_memory_bytes": 4677632,
+          "name": "/usr/lib/xorg/Xorg"
+        }
+      ],
+      "temperature_c": 78,
+      "power_mw": 390935,
+      "sm_clock_mhz": 2760
+    },
+    {
+      "time_utc": "2026-10-15T07:41:26.836671+00:00",
+      "monotonic_ns": 379541565541511,
+      "uuid": "GPU-a80c9d3e-f9ec-9e55-3fe3-21b1939941e2",
+      "name": "NVIDIA GeForce RTX 4090",
+      "memory_used_bytes": 45880639488,
+      "memory_reserved_bytes": 662634496,
+      "memory_total_bytes": 51527024640,
+      "gpu_util_percent": 100,
+      "memory_util_percent": 91,
+      "processes": [
+        {
+          "pid": 198758,
+          "kinds": [
+            "compute"
+          ],
+          "used_memory_bytes": 45845839872,
+          "name": "VLLM::Worker_TP0"
+        },
+        {
+          "pid": 4037,
+          "kinds": [
+            "graphics"
+          ],
+          "used_memory_bytes": 4677632,
+          "name": "/usr/lib/xorg/Xorg"
+        }
+      ],
+      "temperature_c": 68,
+      "power_mw": 340064,
+      "sm_clock_mhz": 2700
+    },
+    {
+      "time_utc": "2026-10-15T07:41:26.837969+00:00",
+      "monotonic_ns": 379541566837370,
+      "uuid": "GPU-081919b8-5ace-cba5-0ff8-12f61157f210",
+      "name": "NVIDIA GeForce RTX 4090",
+      "memory_used_bytes": 45341868032,
+      "memory_reserved_bytes": 662634496,
+      "memory_total_bytes": 51527024640,
+      "gpu_util_percent": 100,
+      "memory_util_percent": 93,
+      "processes": [
+        {
+          "pid": 198759,
+          "kinds": [
+            "compute"
+          ],
+          "used_memory_bytes": 45306871808,
+          "name": "VLLM::Worker_TP1"
+        },
+        {
+          "pid": 4037,
+          "kinds": [
+            "graphics"
+          ],
+          "used_memory_bytes": 4677632,
+          "name": "/usr/lib/xorg/Xorg"
+        }
+      ],
+      "temperature_c": 66,
+      "power_mw": 322355,
+      "sm_clock_mhz": 2700
+    },
+    {
+      "time_utc": "2026-10-15T07:41:27.340343+00:00",
+      "monotonic_ns": 379542069225801,
+      "uuid": "GPU-2fc1ac98-6248-c0db-2b5b-0197d2aca409",
+      "name": "NVIDIA GeForce RTX 4090",
+      "memory_used_bytes": 35699884032,
+      "memory_reserved_bytes": 662634496,
+      "memory_total_bytes": 51527024640,
+      "gpu_util_percent": 100,
+      "memory_util_percent": 75,
+      "processes": [
+        {
+          "pid": 123839,
+          "kinds": [
+            "compute"
+          ],
+          "used_memory_bytes": 3105882112,
+          "name": "/usr/bin/python3"
+        },
+        {
+          "pid": 1339201,
+          "kinds": [
+            "compute"
+          ],
+          "used_memory_bytes": 22326280192,
+          "name": "/tmp/revive-alfworld-env/bin/python"
+        },
+        {
+          "pid": 2208944,
+          "kinds": [
+            "compute"
+          ],
+          "used_memory_bytes": 10223616000,
+          "name": "/data1/student/fdq/anaconda3/envs/embodied-slam/bin/python"
+        },
+        {
+          "pid": 4037,
+          "kinds": [
+            "graphics"
+          ],
+          "used_memory_bytes": 4677632,
+          "name": "/usr/lib/xorg/Xorg"
+        }
+      ],
+      "temperature_c": 79,
+      "power_mw": 378494,
+      "sm_clock_mhz": 2625
+    },
+    {
+      "time_utc": "2026-10-15T07:41:27.348045+00:00",
+      "monotonic_ns": 379542076928337,
+      "uuid": "GPU-65eb0868-8c9c-735a-db98-49ecae46b4a4",
+      "name": "NVIDIA GeForce RTX 4090",
+      "memory_used_bytes": 27394048,
+      "memory_reserved_bytes": 662634496,
+      "memory_total_bytes": 51527024640,
+      "gpu_util_percent": 0,
+      "memory_util_percent": 0,
+      "processes": [
+        {
+          "pid": 4037,
+          "kinds": [
+            "graphics"
+          ],
+          "used_memory_bytes": 4677632,
+          "name": "/usr/lib/xorg/Xorg"
+        }
+      ],
+      "temperature_c": 43,
+      "power_mw": 30131,
+      "sm_clock_mhz": 210
+    },
+    {
+      "time_utc": "2026-10-15T07:41:27.361513+00:00",
+      "monotonic_ns": 379542090396851,
+      "uuid": "GPU-ab7ba07b-7a77-651b-0acc-825c3c61bce5",
+      "name": "NVIDIA GeForce RTX 4090",
+      "memory_used_bytes": 35286941696,
+      "memory_reserved_bytes": 662634496,
+      "memory_total_bytes": 51527024640,
+      "gpu_util_percent": 100,
+      "memory_util_percent": 50,
+      "processes": [
+        {
+          "pid": 2113824,
+          "kinds": [
+            "compute"
+          ],
+          "used_memory_bytes": 14849933312,
+          "name": "/data1/student/fdq/anaconda3/envs/embodied-slam/bin/python"
+        },
+        {
+          "pid": 2237314,
+          "kinds": [
+            "compute"
+          ],
+          "used_memory_bytes": 10196353024,
+          "name": "/data1/student/fdq/anaconda3/envs/embodied-slam/bin/python"
+        },
+        {
+          "pid": 2267880,
+          "kinds": [
+            "compute"
+          ],
+          "used_memory_bytes": 10196353024,
+          "name": "/data1/student/fdq/anaconda3/envs/embodied-slam/bin/python"
+        },
+        {
+          "pid": 4037,
+          "kinds": [
+            "graphics"
+          ],
+          "used_memory_bytes": 4677632,
+          "name": "/usr/lib/xorg/Xorg"
+        }
+      ],
+      "temperature_c": 67,
+      "power_mw": 339527,
+      "sm_clock_mhz": 2640
+    },
+    {
+      "time_utc": "2026-10-15T07:41:27.375358+00:00",
+      "monotonic_ns": 379542104239819,
+      "uuid": "GPU-b37a6ba9-5472-3c53-39f9-557b98ea7437",
+      "name": "NVIDIA GeForce RTX 4090",
+      "memory_used_bytes": 40865562624,
+      "memory_reserved_bytes": 662634496,
+      "memory_total_bytes": 51527024640,
+      "gpu_util_percent": 87,
+      "memory_util_percent": 28,
+      "processes": [
+        {
+          "pid": 1854165,
+          "kinds": [
+            "compute"
+          ],
+          "used_memory_bytes": 14849933312,
+          "name": "/data1/student/fdq/anaconda3/envs/embodied-slam/bin/python"
+        },
+        {
+          "pid": 2237313,
+          "kinds": [
+            "compute"
+          ],
+          "used_memory_bytes": 12985565184,
+          "name": "/data1/student/fdq/anaconda3/envs/embodied-slam/bin/python"
+        },
+        {
+          "pid": 2264137,
+          "kinds": [
+            "compute"
+          ],
+          "used_memory_bytes": 12985565184,
+          "name": "/data1/student/fdq/anaconda3/envs/embodied-slam/bin/python"
+        },
+        {
+          "pid": 4037,
+          "kinds": [
+            "graphics"
+          ],
+          "used_memory_bytes": 4677632,
+          "name": "/usr/lib/xorg/Xorg"
+        }
+      ],
+      "temperature_c": 69,
+      "power_mw": 300775,
+      "sm_clock_mhz": 2760
+    },
+    {
+      "time_utc": "2026-10-15T07:41:27.376804+00:00",
+      "monotonic_ns": 379542105679059,
+      "uuid": "GPU-ad37eef5-b84e-3feb-bc21-3b1646414a8f",
+      "name": "NVIDIA GeForce RTX 4090",
+      "memory_used_bytes": 47396356096,
+      "memory_reserved_bytes": 662634496,
+      "memory_total_bytes": 51527024640,
+      "gpu_util_percent": 46,
+      "memory_util_percent": 20,
+      "processes": [
+        {
+          "pid": 709069,
+          "kinds": [
+            "compute"
+          ],
+          "used_memory_bytes": 34372321280,
+          "name": "python3"
+        },
+        {
+          "pid": 2237315,
+          "kinds": [
+            "compute"
+          ],
+          "used_memory_bytes": 12985565184,
+          "name": "/data1/student/fdq/anaconda3/envs/embodied-slam/bin/python"
+        },
+        {
+          "pid": 4037,
+          "kinds": [
+            "graphics"
+          ],
+          "used_memory_bytes": 4677632,
+          "name": "/usr/lib/xorg/Xorg"
+        }
+      ],
+      "temperature_c": 54,
+      "power_mw": 179269,
+      "sm_clock_mhz": 2625
+    },
+    {
+      "time_utc": "2026-10-15T07:41:27.378718+00:00",
+      "monotonic_ns": 379542107590129,
+      "uuid": "GPU-b9c00326-f1ad-f9dc-8b6c-38579886d483",
+      "name": "NVIDIA GeForce RTX 4090",
+      "memory_used_bytes": 47747170304,
+      "memory_reserved_bytes": 662634496,
+      "memory_total_bytes": 51527024640,
+      "gpu_util_percent": 100,
+      "memory_util_percent": 49,
+      "processes": [
+        {
+          "pid": 2238960,
+          "kinds": [
+            "compute"
+          ],
+          "used_memory_bytes": 19881000960,
+          "name": "/data1/student/xbh/mycode/FlashVID/.venv/bin/python"
+        },
+        {
+          "pid": 2237311,
+          "kinds": [
+            "compute"
+          ],
+          "used_memory_bytes": 10196353024,
+          "name": "/data1/student/fdq/anaconda3/envs/embodied-slam/bin/python"
+        },
+        {
+          "pid": 2237310,
+          "kinds": [
+            "compute"
+          ],
+          "used_memory_bytes": 11561598976,
+          "name": "/data1/student/fdq/anaconda3/envs/embodied-slam/bin/python"
+        },
+        {
+          "pid": 2237309,
+          "kinds": [
+            "compute"
+          ],
+          "used_memory_bytes": 6058672128,
+          "name": "/data1/student/fdq/anaconda3/envs/embodied-slam/bin/python"
+        },
+        {
+          "pid": 4037,
+          "kinds": [
+            "graphics"
+          ],
+          "used_memory_bytes": 4677632,
+          "name": "/usr/lib/xorg/Xorg"
+        }
+      ],
+      "temperature_c": 76,
+      "power_mw": 384220,
+      "sm_clock_mhz": 2760
+    },
+    {
+      "time_utc": "2026-10-15T07:41:27.380526+00:00",
+      "monotonic_ns": 379542109396431,
+      "uuid": "GPU-a80c9d3e-f9ec-9e55-3fe3-21b1939941e2",
+      "name": "NVIDIA GeForce RTX 4090",
+      "memory_used_bytes": 45880639488,
+      "memory_reserved_bytes": 662634496,
+      "memory_total_bytes": 51527024640,
+      "gpu_util_percent": 100,
+      "memory_util_percent": 91,
+      "processes": [
+        {
+          "pid": 198758,
+          "kinds": [
+            "compute"
+          ],
+          "used_memory_bytes": 45845839872,
+          "name": "VLLM::Worker_TP0"
+        },
+        {
+          "pid": 4037,
+          "kinds": [
+            "graphics"
+          ],
+          "used_memory_bytes": 4677632,
+          "name": "/usr/lib/xorg/Xorg"
+        }
+      ],
+      "temperature_c": 68,
+      "power_mw": 340076,
+      "sm_clock_mhz": 2700
+    },
+    {
+      "time_utc": "2026-10-15T07:41:27.382044+00:00",
+      "monotonic_ns": 379542110913504,
+      "uuid": "GPU-081919b8-5ace-cba5-0ff8-12f61157f210",
+      "name": "NVIDIA GeForce RTX 4090",
+      "memory_used_bytes": 45341868032,
+      "memory_reserved_bytes": 662634496,
+      "memory_total_bytes": 51527024640,
+      "gpu_util_percent": 100,
+      "memory_util_percent": 93,
+      "processes": [
+        {
+          "pid": 198759,
+          "kinds": [
+            "compute"
+          ],
+          "used_memory_bytes": 45306871808,
+          "name": "VLLM::Worker_TP1"
+        },
+        {
+          "pid": 4037,
+          "kinds": [
+            "graphics"
+          ],
+          "used_memory_bytes": 4677632,
+          "name": "/usr/lib/xorg/Xorg"
+        }
+      ],
+      "temperature_c": 66,
+      "power_mw": 322212,
+      "sm_clock_mhz": 2700
+    },
+    {
+      "time_utc": "2026-10-15T07:41:27.382864+00:00",
+      "monotonic_ns": 379542111733596,
+      "uuid": "GPU-65eb0868-8c9c-735a-db98-49ecae46b4a4",
+      "name": "NVIDIA GeForce RTX 4090",
+      "memory_used_bytes": 27394048,
+      "memory_reserved_bytes": 662634496,
+      "memory_total_bytes": 51527024640,
+      "gpu_util_percent": 0,
+      "memory_util_percent": 0,
+      "processes": [
+        {
+          "pid": 4037,
+          "kinds": [
+            "graphics"
+          ],
+          "used_memory_bytes": 4677632,
+          "name": "/usr/lib/xorg/Xorg"
+        }
+      ],
+      "temperature_c": 43,
+      "power_mw": 30131,
+      "sm_clock_mhz": 210
+    }
+  ],
+  "before": {
+    "time_utc": "2026-10-15T07:44:31.720184+00:00",
+    "monotonic_ns": 379726449085186,
+    "uuid": "GPU-65eb0868-8c9c-735a-db98-49ecae46b4a4",
+    "name": "NVIDIA GeForce RTX 4090",
+    "memory_used_bytes": 27394048,
+    "memory_reserved_bytes": 662634496,
+    "memory_total_bytes": 51527024640,
+    "gpu_util_percent": 0,
+    "memory_util_percent": 0,
+    "processes": [
+      {
+        "pid": 4037,
+        "kinds": [
+          "graphics"
+        ],
+        "used_memory_bytes": 4677632,
+        "name": "/usr/lib/xorg/Xorg"
+      }
+    ],
+    "temperature_c": 54,
+    "power_mw": 120666,
+    "sm_clock_mhz": 2685
+  },
+  "monitor": {
+    "valid": true,
+    "allowed_pid": 2412822,
+    "observed_owned_pids": [
+      2412822
+    ],
+    "foreign_processes": [],
+    "errors": [],
+    "poll_interval_ms": 20.0,
+    "max_observation_gap_ms": 59.115054,
+    "peak_sampled_device_memory_bytes": 3921084416
+  },
+  "telemetry_file": "docs/performance/stages/S0/cumulative/GPU-65eb0868-8c9c-735a-db98-49ecae46b4a4/qwen3-0.6b_p32_g128.nvml.json.gz",
+  "samples": [
+    {
+      "device": "cuda",
+      "text": "123\n\u4e2d\u6587 123Hello foobar\n\u4e2d\u6587 123Hello foobar\n\u4e2d\u6587 123Hello foobar\n\u4e2d\u6587 123Hello foobar\n\u4e2d\u6587 123Hello foobar\n\u4e2d\u6587 123Hello foobar\n\u4e2d\u6587 123Hello foobar\n\u4e2d\u6587 123Hello foobar\n\u4e2d\u6587 123Hello foobar\n\u4e2d\u6587 123Hello foobar\n\u4e2d\u6587 123Hello foobar\n\u4e2d\u6587 123Hello foobar\n\u4e2d\u6587 123Hello foobar\n\u4e2d\u6587 123Hello foo",
+      "prompt_tokens": [
+        9707,
+        220,
+        16,
+        17,
+        18,
+        198,
+        104811,
+        220,
+        7975,
+        2257,
+        9707,
+        220,
+        16,
+        17,
+        18,
+        198,
+        104811,
+        220,
+        7975,
+        2257,
+        9707,
+        220,
+        16,
+        17,
+        18,
+        198,
+        104811,
+        220,
+        7975,
+        2257,
+        9707,
+        220
+      ],
+      "generated_tokens": [
+        16,
+        17,
+        18,
+        198,
+        104811,
+        220,
+        16,
+        17,
+        18,
+        9707,
+        15229,
+        2257,
+        198,
+        104811,
+        220,
+        16,
+        17,
+        18,
+        9707,
+        15229,
+        2257,
+        198,
+        104811,
+        220,
+        16,
+        17,
+        18,
+        9707,
+        15229,
+        2257,
+        198,
+        104811,
+        220,
+        16,
+        17,
+        18,
+        9707,
+        15229,
+        2257,
+        198,
+        104811,
+        220,
+        16,
+        17,
+        18,
+        9707,
+        15229,
+        2257,
+        198,
+        104811,
+        220,
+        16,
+        17,
+        18,
+        9707,
+        15229,
+        2257,
+        198,
+        104811,
+        220,
+        16,
+        17,
+        18,
+        9707,
+        15229,
+        2257,
+        198,
+        104811,
+        220,
+        16,
+        17,
+        18,
+        9707,
+        15229,
+        2257,
+        198,
+        104811,
+        220,
+        16,
+        17,
+        18,
+        9707,
+        15229,
+        2257,
+        198,
+        104811,
+        220,
+        16,
+        17,
+        18,
+        9707,
+        15229,
+        2257,
+        198,
+        104811,
+        220,
+        16,
+        17,
+        18,
+        9707,
+        15229,
+        2257,
+        198,
+        104811,
+        220,
+        16,
+        17,
+        18,
+        9707,
+        15229,
+        2257,
+        198,
+        104811,
+        220,
+        16,
+        17,
+        18,
+        9707,
+        15229,
+        2257,
+        198,
+        104811,
+        220,
+        16,
+        17,
+        18,
+        9707,
+        15229
+      ],
+      "stop_reason": "length",
+      "context_length": 2048,
+      "iteration": 0,
+      "warmup_requests": 2,
+      "tokenization_ms": 0.000694,
+      "prefill_ms": 111.119735,
+      "gpu_load_memory_bytes": 3483369472,
+      "load_ms": 1272.75344,
+      "ttft_ms": 111.120429,
+      "decode_ms": 477.16345,
+      "total_ms": 588.283879,
+      "decode_tokens_per_second": 266.156178,
+      "decode_token_ms": [
+        3.660154,
+        3.664632,
+        3.67832,
+        3.666679,
+        3.663893,
+        3.67004,
+        3.668915,
+        3.654932,
+        3.658725,
+        3.666895,
+        3.676253,
+        3.669665,
+        3.668595,
+        3.67953,
+        3.683193,
+        3.666064,
+        3.675747,
+        3.691153,
+        3.693889,
+        3.683999,
+        3.690328,
+        3.700646,
+        3.702412,
+        3.684547,
+        3.694344,
+        3.704088,
+        3.708995,
+        3.700711,
+        3.703993,
+        3.715178,
+        3.717998,
+        3.700035,
+        3.708633,
+        3.713106,
+        3.722282,
+        3.71312,
+        3.723332,
+        3.725537,
+        3.720291,
+        3.707909,
+        3.71322,
+        3.721419,
+        3.726413,
+        3.72307,
+        3.729833,
+        3.751502,
+        3.740377,
+        3.72621,
+        3.734656,
+        3.738622,
+        3.744501,
+        3.733706,
+        3.745036,
+        3.751521,
+        3.755748,
+        3.737697,
+        3.755624,
+        3.761927,
+        3.760478,
+        3.75814,
+        3.749913,
+        3.771739,
+        3.776864,
+        3.749675,
+        3.757886,
+        3.753004,
+        3.753122,
+        3.752175,
+        3.768517,
+        3.757289,
+        3.77221,
+        3.757629,
+        3.757702,
+        3.766436,
+        3.768623,
+        3.775447,
+        3.773954,
+        3.783112,
+        3.780107,
+        3.770905,
+        3.775762,
+        3.79072,
+        3.781859,
+        3.779651,
+        3.779604,
+        3.795188,
+        3.797278,
+        3.781998,
+        3.794811,
+        3.788757,
+        3.795751,
+        3.799131,
+        3.79912,
+        3.798029,
+        3.805307,
+        3.792071,
+        3.794978,
+        3.81346,
+        3.815153,
+        3.796315,
+        3.811437,
+        3.809239,
+        3.814299,
+        3.7999,
+        3.818132,
+        3.817826,
+        3.827616,
+        3.830192,
+        3.833774,
+        3.843049,
+        3.836043,
+        3.818185,
+        3.823351,
+        3.833654,
+        3.838952,
+        3.831144,
+        3.845803,
+        3.868353,
+        3.857997,
+        3.834797,
+        3.849552,
+        3.851148,
+        3.857274,
+        3.847162,
+        3.851355,
+        3.858637,
+        3.874707
+      ]
+    },
+    {
+      "device": "cuda",
+      "text": "123\n\u4e2d\u6587 123Hello foobar\n\u4e2d\u6587 123Hello foobar\n\u4e2d\u6587 123Hello foobar\n\u4e2d\u6587 123Hello foobar\n\u4e2d\u6587 123Hello foobar\n\u4e2d\u6587 123Hello foobar\n\u4e2d\u6587 123Hello foobar\n\u4e2d\u6587 123Hello foobar\n\u4e2d\u6587 123Hello foobar\n\u4e2d\u6587 123Hello foobar\n\u4e2d\u6587 123Hello foobar\n\u4e2d\u6587 123Hello foobar\n\u4e2d\u6587 123Hello foobar\n\u4e2d\u6587 123Hello foo",
+      "prompt_tokens": [
+        9707,
+        220,
+        16,
+        17,
+        18,
+        198,
+        104811,
+        220,
+        7975,
+        2257,
+        9707,
+        220,
+        16,
+        17,
+        18,
+        198,
+        104811,
+        220,
+        7975,
+        2257,
+        9707,
+        220,
+        16,
+        17,
+        18,
+        198,
+        104811,
+        220,
+        7975,
+        2257,
+        9707,
+        220
+      ],
+      "generated_tokens": [
+        16,
+        17,
+        18,
+        198,
+        104811,
+        220,
+        16,
+        17,
+        18,
+        9707,
+        15229,
+        2257,
+        198,
+        104811,
+        220,
+        16,
+        17,
+        18,
+        9707,
+        15229,
+        2257,
+        198,
+        104811,
+        220,
+        16,
+        17,
+        18,
+        9707,
+        15229,
+        2257,
+        198,
+        104811,
+        220,
+        16,
+        17,
+        18,
+        9707,
+        15229,
+        2257,
+        198,
+        104811,
+        220,
+        16,
+        17,
+        18,
+        9707,
+        15229,
+        2257,
+        198,
+        104811,
+        220,
+        16,
+        17,
+        18,
+        9707,
+        15229,
+        2257,
+        198,
+        104811,
+        220,
+        16,
+        17,
+        18,
+        9707,
+        15229,
+        2257,
+        198,
+        104811,
+        220,
+        16,
+        17,
+        18,
+        9707,
+        15229,
+        2257,
+        198,
+        104811,
+        220,
+        16,
+        17,
+        18,
+        9707,
+        15229,
+        2257,
+        198,
+        104811,
+        220,
+        16,
+        17,
+        18,
+        9707,
+        15229,
+        2257,
+        198,
+        104811,
+        220,
+        16,
+        17,
+        18,
+        9707,
+        15229,
+        2257,
+        198,
+        104811,
+        220,
+        16,
+        17,
+        18,
+        9707,
+        15229,
+        2257,
+        198,
+        104811,
+        220,
+        16,
+        17,
+        18,
+        9707,
+        15229,
+        2257,
+        198,
+        104811,
+        220,
+        16,
+        17,
+        18,
+        9707,
+        15229
+      ],
+      "stop_reason": "length",
+      "context_length": 2048,
+      "iteration": 1,
+      "warmup_requests": 2,
+      "tokenization_ms": 0.000629,
+      "prefill_ms": 111.008922,
+      "gpu_load_memory_bytes": 3483369472,
+      "load_ms": 1272.75344,
+      "ttft_ms": 111.009551,
+      "decode_ms": 477.811674,
+      "total_ms": 588.821225,
+      "decode_tokens_per_second": 265.795097,
+      "decode_token_ms": [
+        3.660273,
+        3.667772,
+        3.676146,
+        3.678205,
+        3.673655,
+        3.689797,
+        3.702504,
+        3.678387,
+        3.674974,
+        3.675632,
+        3.682573,
+        3.677347,
+        3.683537,
+        3.696963,
+        3.69233,
+        3.678547,
+        3.688358,
+        3.715115,
+        3.698664,
+        3.69994,
+        3.699408,
+        3.713171,
+        3.719277,
+        3.69043,
+        3.707095,
+        3.70107,
+        3.702796,
+        3.709934,
+        3.704821,
+        3.707121,
+        3.707985,
+        3.700289,
+        3.707755,
+        3.710854,
+        3.713909,
+        3.703892,
+        3.718115,
+        3.727708,
+        3.714864,
+        3.714251,
+        3.717141,
+        3.727519,
+        3.730528,
+        3.72016,
+        3.717381,
+        3.734604,
+        3.728523,
+        3.725189,
+        3.730468,
+        3.735613,
+        3.742754,
+        3.735587,
+        3.739848,
+        3.750819,
+        3.744067,
+        3.732572,
+        3.741709,
+        3.747045,
+        3.750859,
+        3.743798,
+        3.742065,
+        3.757217,
+        3.76697,
+        3.751617,
+        3.751438,
+        3.756154,
+        3.762201,
+        3.763107,
+        3.750511,
+        3.777234,
+        3.760855,
+        3.762724,
+        3.77359,
+        3.795912,
+        3.779349,
+        3.774318,
+        3.775508,
+        3.779708,
+        3.785804,
+        3.777548,
+        3.780893,
+        3.789668,
+        3.791341,
+        3.778655,
+        3.788145,
+        3.787587,
+        3.794325,
+        3.789263,
+        3.808946,
+        3.822396,
+        3.800231,
+        3.80419,
+        3.812043,
+        3.826058,
+        3.812528,
+        3.795132,
+        3.826007,
+        3.812763,
+        3.838685,
+        3.812612,
+        3.823308,
+        3.828233,
+        3.815254,
+        3.819261,
+        3.817814,
+        3.824908,
+        3.819821,
+        3.815109,
+        3.831915,
+        3.831585,
+        3.843425,
+        3.832444,
+        3.833559,
+        3.855629,
+        3.844925,
+        3.842791,
+        3.85358,
+        3.870489,
+        3.870145,
+        3.87549,
+        3.860113,
+        3.866725,
+        3.862565,
+        3.861769,
+        3.869865,
+        3.878997,
+        3.884704
+      ]
+    },
+    {
+      "device": "cuda",
+      "text": "123\n\u4e2d\u6587 123Hello foobar\n\u4e2d\u6587 123Hello foobar\n\u4e2d\u6587 123Hello foobar\n\u4e2d\u6587 123Hello foobar\n\u4e2d\u6587 123Hello foobar\n\u4e2d\u6587 123Hello foobar\n\u4e2d\u6587 123Hello foobar\n\u4e2d\u6587 123Hello foobar\n\u4e2d\u6587 123Hello foobar\n\u4e2d\u6587 123Hello foobar\n\u4e2d\u6587 123Hello foobar\n\u4e2d\u6587 123Hello foobar\n\u4e2d\u6587 123Hello foobar\n\u4e2d\u6587 123Hello foo",
+      "prompt_tokens": [
+        9707,
+        220,
+        16,
+        17,
+        18,
+        198,
+        104811,
+        220,
+        7975,
+        2257,
+        9707,
+        220,
+        16,
+        17,
+        18,
+        198,
+        104811,
+        220,
+        7975,
+        2257,
+        9707,
+        220,
+        16,
+        17,
+        18,
+        198,
+        104811,
+        220,
+        7975,
+        2257,
+        9707,
+        220
+      ],
+      "generated_tokens": [
+        16,
+        17,
+        18,
+        198,
+        104811,
+        220,
+        16,
+        17,
+        18,
+        9707,
+        15229,
+        2257,
+        198,
+        104811,
+        220,
+        16,
+        17,
+        18,
+        9707,
+        15229,
+        2257,
+        198,
+        104811,
+        220,
+        16,
+        17,
+        18,
+        9707,
+        15229,
+        2257,
+        198,
+        104811,
+        220,
+        16,
+        17,
+        18,
+        9707,
+        15229,
+        2257,
+        198,
+        104811,
+        220,
+        16,
+        17,
+        18,
+        9707,
+        15229,
+        2257,
+        198,
+        104811,
+        220,
+        16,
+        17,
+        18,
+        9707,
+        15229,
+        2257,
+        198,
+        104811,
+        220,
+        16,
+        17,
+        18,
+        9707,
+        15229,
+        2257,
+        198,
+        104811,
+        220,
+        16,
+        17,
+        18,
+        9707,
+        15229,
+        2257,
+        198,
+        104811,
+        220,
+        16,
+        17,
+        18,
+        9707,
+        15229,
+        2257,
+        198,
+        104811,
+        220,
+        16,
+        17,
+        18,
+        9707,
+        15229,
+        2257,
+        198,
+        104811,
+        220,
+        16,
+        17,
+        18,
+        9707,
+        15229,
+        2257,
+        198,
+        104811,
+        220,
+        16,
+        17,
+        18,
+        9707,
+        15229,
+        2257,
+        198,
+        104811,
+        220,
+        16,
+        17,
+        18,
+        9707,
+        15229,
+        2257,
+        198,
+        104811,
+        220,
+        16,
+        17,
+        18,
+        9707,
+        15229
+      ],
+      "stop_reason": "length",
+      "context_length": 2048,
+      "iteration": 2,
+      "warmup_requests": 2,
+      "tokenization_ms": 0.000492,
+      "prefill_ms": 111.975125,
+      "gpu_load_memory_bytes": 3483369472,
+      "load_ms": 1272.75344,
+      "ttft_ms": 111.975617,
+      "decode_ms": 479.784282,
+      "total_ms": 591.759899,
+      "decode_tokens_per_second": 264.702294,
+      "decode_token_ms": [
+        3.78045,
+        3.683895,
+        3.689668,
+        3.668886,
+        3.689223,
+        3.687464,
+        3.683235,
+        3.670921,
+        3.679072,
+        3.682654,
+        3.691982,
+        3.675678,
+        3.688469,
+        3.70567,
+        3.703343,
+        3.69416,
+        3.687946,
+        3.708598,
+        3.730998,
+        3.689122,
+        3.696541,
+        3.698599,
+        3.709289,
+        3.693917,
+        3.699759,
+        3.714112,
+        3.720008,
+        3.704342,
+        4.454005,
+        3.850756,
+        3.744198,
+        3.707514,
+        3.70897,
+        3.733078,
+        3.747627,
+        3.718311,
+        3.733838,
+        3.748216,
+        3.74519,
+        3.718865,
+        3.735986,
+        3.736486,
+        3.726267,
+        3.730814,
+        3.724892,
+        3.740991,
+        3.74655,
+        3.728531,
+        3.754474,
+        3.774099,
+        3.738079,
+        3.732219,
+        3.747778,
+        3.7378,
+        3.77109,
+        3.753954,
+        3.775179,
+        3.825434,
+        3.780833,
+        3.75483,
+        3.768094,
+        3.767887,
+        3.77187,
+        3.761763,
+        3.783592,
+        3.777468,
+        3.785598,
+        3.760551,
+        3.768121,
+        3.772149,
+        3.784489,
+        3.763378,
+        3.780735,
+        3.779074,
+        3.792046,
+        3.810741,
+        3.864299,
+        3.791028,
+        3.798459,
+        3.776219,
+        3.791717,
+        3.806282,
+        3.782753,
+        3.80347,
+        3.786489,
+        3.795461,
+        3.79966,
+        3.787799,
+        3.794234,
+        3.796092,
+        3.807617,
+        3.793649,
+        3.801026,
+        3.81456,
+        3.817905,
+        3.805677,
+        3.807507,
+        3.834462,
+        3.827917,
+        3.811812,
+        3.814413,
+        3.851769,
+        3.872041,
+        3.820332,
+        3.825588,
+        3.822691,
+        3.837069,
+        3.824742,
+        3.840284,
+        3.847353,
+        3.848978,
+        3.842016,
+        3.840642,
+        3.850289,
+        3.844133,
+        3.836994,
+        3.852942,
+        3.851339,
+        3.86516,
+        3.858601,
+        3.857244,
+        3.857162,
+        3.859557,
+        3.87171,
+        3.876999,
+        3.866269,
+        3.869149
+      ]
+    },
+    {
+      "device": "cuda",
+      "text": "123\n\u4e2d\u6587 123Hello foobar\n\u4e2d\u6587 123Hello foobar\n\u4e2d\u6587 123Hello foobar\n\u4e2d\u6587 123Hello foobar\n\u4e2d\u6587 123Hello foobar\n\u4e2d\u6587 123Hello foobar\n\u4e2d\u6587 123Hello foobar\n\u4e2d\u6587 123Hello foobar\n\u4e2d\u6587 123Hello foobar\n\u4e2d\u6587 123Hello foobar\n\u4e2d\u6587 123Hello foobar\n\u4e2d\u6587 123Hello foobar\n\u4e2d\u6587 123Hello foobar\n\u4e2d\u6587 123Hello foo",
+      "prompt_tokens": [
+        9707,
+        220,
+        16,
+        17,
+        18,
+        198,
+        104811,
+        220,
+        7975,
+        2257,
+        9707,
+        220,
+        16,
+        17,
+        18,
+        198,
+        104811,
+        220,
+        7975,
+        2257,
+        9707,
+        220,
+        16,
+        17,
+        18,
+        198,
+        104811,
+        220,
+        7975,
+        2257,
+        9707,
+        220
+      ],
+      "generated_tokens": [
+        16,
+        17,
+        18,
+        198,
+        104811,
+        220,
+        16,
+        17,
+        18,
+        9707,
+        15229,
+        2257,
+        198,
+        104811,
+        220,
+        16,
+        17,
+        18,
+        9707,
+        15229,
+        2257,
+        198,
+        104811,
+        220,
+        16,
+        17,
+        18,
+        9707,
+        15229,
+        2257,
+        198,
+        104811,
+        220,
+        16,
+        17,
+        18,
+        9707,
+        15229,
+        2257,
+        198,
+        104811,
+        220,
+        16,
+        17,
+        18,
+        9707,
+        15229,
+        2257,
+        198,
+        104811,
+        220,
+        16,
+        17,
+        18,
+        9707,
+        15229,
+        2257,
+        198,
+        104811,
+        220,
+        16,
+        17,
+        18,
+        9707,
+        15229,
+        2257,
+        198,
+        104811,
+        220,
+        16,
+        17,
+        18,
+        9707,
+        15229,
+        2257,
+        198,
+        104811,
+        220,
+        16,
+        17,
+        18,
+        9707,
+        15229,
+        2257,
+        198,
+        104811,
+        220,
+        16,
+        17,
+        18,
+        9707,
+        15229,
+        2257,
+        198,
+        104811,
+        220,
+        16,
+        17,
+        18,
+        9707,
+        15229,
+        2257,
+        198,
+        104811,
+        220,
+        16,
+        17,
+        18,
+        9707,
+        15229,
+        2257,
+        198,
+        104811,
+        220,
+        16,
+        17,
+        18,
+        9707,
+        15229,
+        2257,
+        198,
+        104811,
+        220,
+        16,
+        17,
+        18,
+        9707,
+        15229
+      ],
+      "stop_reason": "length",
+      "context_length": 2048,
+      "iteration": 3,
+      "warmup_requests": 2,
+      "tokenization_ms": 0.002339,
+      "prefill_ms": 111.288299,
+      "gpu_load_memory_bytes": 3483369472,
+      "load_ms": 1272.75344,
+      "ttft_ms": 111.290638,
+      "decode_ms": 479.186562,
+      "total_ms": 590.4772,
+      "decode_tokens_per_second": 265.032474,
+      "decode_token_ms": [
+        3.675086,
+        3.677948,
+        3.675557,
+        3.71869,
+        3.695593,
+        3.693783,
+        3.683884,
+        3.683286,
+        3.690394,
+        3.700948,
+        3.705015,
+        3.692086,
+        3.686376,
+        3.699633,
+        3.722076,
+        3.678051,
+        3.685776,
+        3.68552,
+        3.693753,
+        3.694844,
+        3.704288,
+        3.705942,
+        3.701577,
+        3.692841,
+        3.691911,
+        3.705992,
+        3.713013,
+        3.699583,
+        3.710598,
+        3.712489,
+        3.720851,
+        3.711353,
+        3.701886,
+        3.718539,
+        3.718393,
+        3.723327,
+        3.717885,
+        3.726142,
+        3.715994,
+        3.713319,
+        3.724395,
+        3.735971,
+        3.73657,
+        3.725075,
+        3.729031,
+        3.733116,
+        3.732582,
+        3.722627,
+        3.739443,
+        3.774285,
+        3.762502,
+        3.75536,
+        3.758975,
+        3.763708,
+        3.768644,
+        3.760811,
+        3.772592,
+        3.960087,
+        3.812588,
+        3.779628,
+        3.783088,
+        3.788447,
+        3.809867,
+        3.783685,
+        3.771533,
+        3.785007,
+        3.796886,
+        3.802022,
+        3.801003,
+        3.801433,
+        3.802581,
+        3.793091,
+        3.78815,
+        3.790442,
+        3.793956,
+        3.827292,
+        3.879,
+        3.806785,
+        3.788274,
+        3.773814,
+        3.781655,
+        3.791378,
+        3.797124,
+        3.780534,
+        3.792755,
+        3.802471,
+        3.793738,
+        3.789691,
+        3.790157,
+        3.794334,
+        3.802297,
+        3.813435,
+        3.801606,
+        3.809744,
+        3.821704,
+        3.806281,
+        3.798271,
+        3.804401,
+        3.83406,
+        3.816612,
+        3.813364,
+        3.829034,
+        3.830765,
+        3.827142,
+        3.831023,
+        3.820354,
+        3.839774,
+        3.856047,
+        3.834464,
+        3.838977,
+        3.840961,
+        3.841461,
+        3.854091,
+        3.840729,
+        3.851063,
+        3.845858,
+        3.848667,
+        3.849349,
+        3.869872,
+        3.866976,
+        3.857312,
+        3.871176,
+        3.869812,
+        3.853999,
+        3.86623,
+        3.874118,
+        3.882864
+      ]
+    },
+    {
+      "device": "cuda",
+      "text": "123\n\u4e2d\u6587 123Hello foobar\n\u4e2d\u6587 123Hello foobar\n\u4e2d\u6587 123Hello foobar\n\u4e2d\u6587 123Hello foobar\n\u4e2d\u6587 123Hello foobar\n\u4e2d\u6587 123Hello foobar\n\u4e2d\u6587 123Hello foobar\n\u4e2d\u6587 123Hello foobar\n\u4e2d\u6587 123Hello foobar\n\u4e2d\u6587 123Hello foobar\n\u4e2d\u6587 123Hello foobar\n\u4e2d\u6587 123Hello foobar\n\u4e2d\u6587 123Hello foobar\n\u4e2d\u6587 123Hello foo",
+      "prompt_tokens": [
+        9707,
+        220,
+        16,
+        17,
+        18,
+        198,
+        104811,
+        220,
+        7975,
+        2257,
+        9707,
+        220,
+        16,
+        17,
+        18,
+        198,
+        104811,
+        220,
+        7975,
+        2257,
+        9707,
+        220,
+        16,
+        17,
+        18,
+        198,
+        104811,
+        220,
+        7975,
+        2257,
+        9707,
+        220
+      ],
+      "generated_tokens": [
+        16,
+        17,
+        18,
+        198,
+        104811,
+        220,
+        16,
+        17,
+        18,
+        9707,
+        15229,
+        2257,
+        198,
+        104811,
+        220,
+        16,
+        17,
+        18,
+        9707,
+        15229,
+        2257,
+        198,
+        104811,
+        220,
+        16,
+        17,
+        18,
+        9707,
+        15229,
+        2257,
+        198,
+        104811,
+        220,
+        16,
+        17,
+        18,
+        9707,
+        15229,
+        2257,
+        198,
+        104811,
+        220,
+        16,
+        17,
+        18,
+        9707,
+        15229,
+        2257,
+        198,
+        104811,
+        220,
+        16,
+        17,
+        18,
+        9707,
+        15229,
+        2257,
+        198,
+        104811,
+        220,
+        16,
+        17,
+        18,
+        9707,
+        15229,
+        2257,
+        198,
+        104811,
+        220,
+        16,
+        17,
+        18,
+        9707,
+        15229,
+        2257,
+        198,
+        104811,
+        220,
+        16,
+        17,
+        18,
+        9707,
+        15229,
+        2257,
+        198,
+        104811,
+        220,
+        16,
+        17,
+        18,
+        9707,
+        15229,
+        2257,
+        198,
+        104811,
+        220,
+        16,
+        17,
+        18,
+        9707,
+        15229,
+        2257,
+        198,
+        104811,
+        220,
+        16,
+        17,
+        18,
+        9707,
+        15229,
+        2257,
+        198,
+        104811,
+        220,
+        16,
+        17,
+        18,
+        9707,
+        15229,
+        2257,
+        198,
+        104811,
+        220,
+        16,
+        17,
+        18,
+        9707,
+        15229
+      ],
+      "stop_reason": "length",
+      "context_length": 2048,
+      "iteration": 4,
+      "warmup_requests": 2,
+      "tokenization_ms": 0.001486,
+      "prefill_ms": 111.152767,
+      "gpu_load_memory_bytes": 3483369472,
+      "load_ms": 1272.75344,
+      "ttft_ms": 111.154253,
+      "decode_ms": 478.047519,
+      "total_ms": 589.201772,
+      "decode_tokens_per_second": 265.663966,
+      "decode_token_ms": [
+        3.663696,
+        3.698662,
+        3.757973,
+        3.666941,
+        3.6669,
+        3.687821,
+        3.686928,
+        3.671277,
+        3.671504,
+        3.680271,
+        3.688719,
+        3.683345,
+        3.672468,
+        3.69655,
+        3.704312,
+        3.678218,
+        3.685842,
+        3.703854,
+        3.706601,
+        3.695279,
+        3.693408,
+        3.710663,
+        3.720092,
+        3.703969,
+        3.700843,
+        3.711579,
+        3.72019,
+        3.717851,
+        3.719381,
+        3.71916,
+        3.721047,
+        3.712002,
+        3.720238,
+        3.729294,
+        3.71603,
+        3.712388,
+        3.718381,
+        3.725384,
+        3.740871,
+        3.715243,
+        3.728078,
+        3.731511,
+        3.735484,
+        3.727696,
+        3.745641,
+        3.744316,
+        3.741623,
+        3.734159,
+        3.730098,
+        3.744065,
+        3.745386,
+        3.752881,
+        3.739606,
+        3.746147,
+        3.763847,
+        3.735467,
+        3.743932,
+        3.753684,
+        3.761807,
+        3.760099,
+        3.770425,
+        3.76307,
+        3.772655,
+        3.75892,
+        3.760888,
+        3.764899,
+        3.768309,
+        3.764851,
+        3.765111,
+        3.774271,
+        3.790413,
+        3.777794,
+        3.762076,
+        3.779692,
+        3.772987,
+        3.772867,
+        3.774693,
+        3.787828,
+        3.78212,
+        3.774019,
+        3.777419,
+        3.781398,
+        3.806718,
+        3.780024,
+        3.782888,
+        3.786659,
+        3.797454,
+        3.786909,
+        3.803409,
+        3.796899,
+        3.802994,
+        3.798736,
+        3.793681,
+        3.810858,
+        3.818232,
+        3.802522,
+        3.806003,
+        3.818603,
+        3.817628,
+        3.814294,
+        3.81275,
+        3.815636,
+        3.818694,
+        3.811792,
+        3.818156,
+        3.82637,
+        3.821502,
+        3.820115,
+        3.829159,
+        3.828768,
+        3.828023,
+        3.830571,
+        3.828676,
+        3.84872,
+        3.844229,
+        3.836093,
+        3.860283,
+        3.855594,
+        3.85231,
+        3.847669,
+        3.841759,
+        3.855132,
+        3.854023,
+        3.857212,
+        3.877232,
+        3.872319,
+        3.872521
+      ]
+    }
+  ],
+  "time_utc": "2026-10-15T07:44:37.584619+00:00",
+  "metrics": {
+    "load_ms": {
+      "median": 1272.75344,
+      "p95": 1272.75344,
+      "min": 1272.75344,
+      "max": 1272.75344
+    },
+    "tokenization_ms": {
+      "median": 0.000694,
+      "p95": 0.0021684,
+      "min": 0.000492,
+      "max": 0.002339
+    },
+    "ttft_ms": {
+      "median": 111.154253,
+      "p95": 111.8386212,
+      "min": 111.009551,
+      "max": 111.975617
+    },
+    "prefill_ms": {
+      "median": 111.152767,
+      "p95": 111.8377598,
+      "min": 111.008922,
+      "max": 111.975125
+    },
+    "decode_ms": {
+      "median": 478.047519,
+      "p95": 479.664738,
+      "min": 477.16345,
+      "max": 479.784282
+    },
+    "total_ms": {
+      "median": 589.201772,
+      "p95": 591.5033592,
+      "min": 588.283879,
+      "max": 591.759899
+    },
+    "decode_tokens_per_second": {
+      "median": 265.663966,
+      "p95": 266.0839618,
+      "min": 264.702294,
+      "max": 266.156178
+    },
+    "gpu_load_memory_bytes": {
+      "median": 3483369472,
+      "p95": 3483369472.0,
+      "min": 3483369472,
+      "max": 3483369472
+    },
+    "tpot_ms": {
+      "median": 3.767887,
+      "p95": 3.860164,
+      "p99": 3.87715278
+    },
+    "prefill_tokens_per_second": {
+      "median": 287.8920683998807
+    }
+  }
+}

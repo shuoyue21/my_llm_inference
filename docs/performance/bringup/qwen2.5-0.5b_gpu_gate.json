@@ -1,0 +1,1710 @@
+{
+  "status": "passed",
+  "harness": {
+    "metric_definition_version": 1,
+    "files": {
+      "/data1/student/xbh/mycode/my_llm_inference/scripts/benchmark_suite.py": "7e166aaf374616cc440b782e298008de537f9ce399462682ca7f4cfce35fcba7",
+      "/data1/student/xbh/mycode/my_llm_inference/scripts/empty_gpu.py": "fccb2c6d0b8372921fcc6bb9994d2d12a765be87b6ebc1357e85e2ff0798ccd8",
+      "/data1/student/xbh/mycode/my_llm_inference/scripts/measurement_records.py": "1c018600d853c42e6512fa59c286e702f986600c82ab74cb80c5bb6e2e980d16",
+      "/data1/student/xbh/mycode/my_llm_inference/scripts/run_on_empty_gpu.py": "9e7fab73e5607b5583fa2d55eb2d29cbf39c5b6b4e88dd6ca2146f1f7dc7d271"
+    }
+  },
+  "purpose": "correctness",
+  "gpu_uuid": "GPU-65eb0868-8c9c-735a-db98-49ecae46b4a4",
+  "command": [
+    "env",
+    "LD_LIBRARY_PATH=/data1/student/xbh/mycode/my_llm_inference/.artifacts/performance/S0/qwen2.5-0.5b/lib:/data1/student/xbh/.local/cuda-13.0/lib64:",
+    "python3",
+    "scripts/verify_hf.py",
+    "--binary",
+    ".artifacts/performance/S0/qwen2.5-0.5b/bin/llama_infer",
+    "--model-dir",
+    "models/qwen2.5-0.5b-instruct",
+    "--device",
+    "cuda",
+    "--output",
+    "docs/performance/bringup/qwen2.5-0.5b_cuda.json"
+  ],
+  "exit_code": 0,
+  "gate": [
+    {
+      "time_utc": "2026-10-15T07:40:41.162541+00:00",
+      "monotonic_ns": 379495891418850,
+      "uuid": "GPU-2fc1ac98-6248-c0db-2b5b-0197d2aca409",
+      "name": "NVIDIA GeForce RTX 4090",
+      "memory_used_bytes": 35699884032,
+      "memory_reserved_bytes": 662634496,
+      "memory_total_bytes": 51527024640,
+      "gpu_util_percent": 92,
+      "memory_util_percent": 64,
+      "processes": [
+        {
+          "pid": 123839,
+          "kinds": [
+            "compute"
+          ],
+          "used_memory_bytes": 3105882112,
+          "name": "/usr/bin/python3"
+        },
+        {
+          "pid": 1339201,
+          "kinds": [
+            "compute"
+          ],
+          "used_memory_bytes": 22326280192,
+          "name": "/tmp/revive-alfworld-env/bin/python"
+        },
+        {
+          "pid": 2208944,
+          "kinds": [
+            "compute"
+          ],
+          "used_memory_bytes": 10223616000,
+          "name": "/data1/student/fdq/anaconda3/envs/embodied-slam/bin/python"
+        },
+        {
+          "pid": 4037,
+          "kinds": [
+            "graphics"
+          ],
+          "used_memory_bytes": 4677632,
+          "name": "/usr/lib/xorg/Xorg"
+        }
+      ],
+      "temperature_c": 74,
+      "power_mw": 356727,
+      "sm_clock_mhz": 2625
+    },
+    {
+      "time_utc": "2026-10-15T07:40:41.172807+00:00",
+      "monotonic_ns": 379495901677495,
+      "uuid": "GPU-65eb0868-8c9c-735a-db98-49ecae46b4a4",
+      "name": "NVIDIA GeForce RTX 4090",
+      "memory_used_bytes": 27394048,
+      "memory_reserved_bytes": 662634496,
+      "memory_total_bytes": 51527024640,
+      "gpu_util_percent": 0,
+      "memory_util_percent": 0,
+      "processes": [
+        {
+          "pid": 4037,
+          "kinds": [
+            "graphics"
+          ],
+          "used_memory_bytes": 4677632,
+          "name": "/usr/lib/xorg/Xorg"
+        }
+      ],
+      "temperature_c": 48,
+      "power_mw": 44782,
+      "sm_clock_mhz": 2520
+    },
+    {
+      "time_utc": "2026-10-15T07:40:41.181575+00:00",
+      "monotonic_ns": 379495910446578,
+      "uuid": "GPU-ab7ba07b-7a77-651b-0acc-825c3c61bce5",
+      "name": "NVIDIA GeForce RTX 4090",
+      "memory_used_bytes": 35286941696,
+      "memory_reserved_bytes": 662634496,
+      "memory_total_bytes": 51527024640,
+      "gpu_util_percent": 100,
+      "memory_util_percent": 73,
+      "processes": [
+        {
+          "pid": 2113824,
+          "kinds": [
+            "compute"
+          ],
+          "used_memory_bytes": 14849933312,
+          "name": "/data1/student/fdq/anaconda3/envs/embodied-slam/bin/python"
+        },
+        {
+          "pid": 2237314,
+          "kinds": [
+            "compute"
+          ],
+          "used_memory_bytes": 10196353024,
+          "name": "/data1/student/fdq/anaconda3/envs/embodied-slam/bin/python"
+        },
+        {
+          "pid": 2267880,
+          "kinds": [
+            "compute"
+          ],
+          "used_memory_bytes": 10196353024,
+          "name": "/data1/student/fdq/anaconda3/envs/embodied-slam/bin/python"
+        },
+        {
+          "pid": 4037,
+          "kinds": [
+            "graphics"
+          ],
+          "used_memory_bytes": 4677632,
+          "name": "/usr/lib/xorg/Xorg"
+        }
+      ],
+      "temperature_c": 68,
+      "power_mw": 331809,
+      "sm_clock_mhz": 2640
+    },
+    {
+      "time_utc": "2026-10-15T07:40:41.191601+00:00",
+      "monotonic_ns": 379495920471987,
+      "uuid": "GPU-b37a6ba9-5472-3c53-39f9-557b98ea7437",
+      "name": "NVIDIA GeForce RTX 4090",
+      "memory_used_bytes": 40865562624,
+      "memory_reserved_bytes": 662634496,
+      "memory_total_bytes": 51527024640,
+      "gpu_util_percent": 85,
+      "memory_util_percent": 25,
+      "processes": [
+        {
+          "pid": 1854165,
+          "kinds": [
+            "compute"
+          ],
+          "used_memory_bytes": 14849933312,
+          "name": "/data1/student/fdq/anaconda3/envs/embodied-slam/bin/python"
+        },
+        {
+          "pid": 2237313,
+          "kinds": [
+            "compute"
+          ],
+          "used_memory_bytes": 12985565184,
+          "name": "/data1/student/fdq/anaconda3/envs/embodied-slam/bin/python"
+        },
+        {
+          "pid": 2264137,
+          "kinds": [
+            "compute"
+          ],
+          "used_memory_bytes": 12985565184,
+          "name": "/data1/student/fdq/anaconda3/envs/embodied-slam/bin/python"
+        },
+        {
+          "pid": 4037,
+          "kinds": [
+            "graphics"
+          ],
+          "used_memory_bytes": 4677632,
+          "name": "/usr/lib/xorg/Xorg"
+        }
+      ],
+      "temperature_c": 69,
+      "power_mw": 303841,
+      "sm_clock_mhz": 2760
+    },
+    {
+      "time_utc": "2026-10-15T07:40:41.201066+00:00",
+      "monotonic_ns": 379495929934431,
+      "uuid": "GPU-ad37eef5-b84e-3feb-bc21-3b1646414a8f",
+      "name": "NVIDIA GeForce RTX 4090",
+      "memory_used_bytes": 47396356096,
+      "memory_reserved_bytes": 662634496,
+      "memory_total_bytes": 51527024640,
+      "gpu_util_percent": 42,
+      "memory_util_percent": 14,
+      "processes": [
+        {
+          "pid": 709069,
+          "kinds": [
+            "compute"
+          ],
+          "used_memory_bytes": 34372321280,
+          "name": "python3"
+        },
+        {
+          "pid": 2237315,
+          "kinds": [
+            "compute"
+          ],
+          "used_memory_bytes": 12985565184,
+          "name": "/data1/student/fdq/anaconda3/envs/embodied-slam/bin/python"
+        },
+        {
+          "pid": 4037,
+          "kinds": [
+            "graphics"
+          ],
+          "used_memory_bytes": 4677632,
+          "name": "/usr/lib/xorg/Xorg"
+        }
+      ],
+      "temperature_c": 55,
+      "power_mw": 180158,
+      "sm_clock_mhz": 2625
+    },
+    {
+      "time_utc": "2026-10-15T07:40:41.210513+00:00",
+      "monotonic_ns": 379495939382410,
+      "uuid": "GPU-b9c00326-f1ad-f9dc-8b6c-38579886d483",
+      "name": "NVIDIA GeForce RTX 4090",
+      "memory_used_bytes": 50504925184,
+      "memory_reserved_bytes": 662634496,
+      "memory_total_bytes": 51527024640,
+      "gpu_util_percent": 100,
+      "memory_util_percent": 43,
+      "processes": [
+        {
+          "pid": 2238960,
+          "kinds": [
+            "compute"
+          ],
+          "used_memory_bytes": 19881000960,
+          "name": "/data1/student/xbh/mycode/FlashVID/.venv/bin/python"
+        },
+        {
+          "pid": 2237311,
+          "kinds": [
+            "compute"
+          ],
+          "used_memory_bytes": 10196353024,
+          "name": "/data1/student/fdq/anaconda3/envs/embodied-slam/bin/python"
+        },
+        {
+          "pid": 2237310,
+          "kinds": [
+            "compute"
+          ],
+          "used_memory_bytes": 11561598976,
+          "name": "/data1/student/fdq/anaconda3/envs/embodied-slam/bin/python"
+        },
+        {
+          "pid": 2237309,
+          "kinds": [
+            "compute"
+          ],
+          "used_memory_bytes": 8816427008,
+          "name": "/data1/student/fdq/anaconda3/envs/embodied-slam/bin/python"
+        },
+        {
+          "pid": 4037,
+          "kinds": [
+            "graphics"
+          ],
+          "used_memory_bytes": 4677632,
+          "name": "/usr/lib/xorg/Xorg"
+        }
+      ],
+      "temperature_c": 76,
+      "power_mw": 377371,
+      "sm_clock_mhz": 2760
+    },
+    {
+      "time_utc": "2026-10-15T07:40:41.222709+00:00",
+      "monotonic_ns": 379495951579983,
+      "uuid": "GPU-a80c9d3e-f9ec-9e55-3fe3-21b1939941e2",
+      "name": "NVIDIA GeForce RTX 4090",
+      "memory_used_bytes": 45880639488,
+      "memory_reserved_bytes": 662634496,
+      "memory_total_bytes": 51527024640,
+      "gpu_util_percent": 100,
+      "memory_util_percent": 93,
+      "processes": [
+        {
+          "pid": 198758,
+          "kinds": [
+            "compute"
+          ],
+          "used_memory_bytes": 45845839872,
+          "name": "VLLM::Worker_TP0"
+        },
+        {
+          "pid": 4037,
+          "kinds": [
+            "graphics"
+          ],
+          "used_memory_bytes": 4677632,
+          "name": "/usr/lib/xorg/Xorg"
+        }
+      ],
+      "temperature_c": 69,
+      "power_mw": 340436,
+      "sm_clock_mhz": 2700
+    },
+    {
+      "time_utc": "2026-10-15T07:40:41.241211+00:00",
+      "monotonic_ns": 379495970085353,
+      "uuid": "GPU-081919b8-5ace-cba5-0ff8-12f61157f210",
+      "name": "NVIDIA GeForce RTX 4090",
+      "memory_used_bytes": 45341868032,
+      "memory_reserved_bytes": 662634496,
+      "memory_total_bytes": 51527024640,
+      "gpu_util_percent": 100,
+      "memory_util_percent": 92,
+      "processes": [
+        {
+          "pid": 198759,
+          "kinds": [
+            "compute"
+          ],
+          "used_memory_bytes": 45306871808,
+          "name": "VLLM::Worker_TP1"
+        },
+        {
+          "pid": 4037,
+          "kinds": [
+            "graphics"
+          ],
+          "used_memory_bytes": 4677632,
+          "name": "/usr/lib/xorg/Xorg"
+        }
+      ],
+      "temperature_c": 66,
+      "power_mw": 322349,
+      "sm_clock_mhz": 2700
+    },
+    {
+      "time_utc": "2026-10-15T07:40:41.759758+00:00",
+      "monotonic_ns": 379496488634097,
+      "uuid": "GPU-2fc1ac98-6248-c0db-2b5b-0197d2aca409",
+      "name": "NVIDIA GeForce RTX 4090",
+      "memory_used_bytes": 35699884032,
+      "memory_reserved_bytes": 662634496,
+      "memory_total_bytes": 51527024640,
+      "gpu_util_percent": 95,
+      "memory_util_percent": 68,
+      "processes": [
+        {
+          "pid": 123839,
+          "kinds": [
+            "compute"
+          ],
+          "used_memory_bytes": 3105882112,
+          "name": "/usr/bin/python3"
+        },
+        {
+          "pid": 1339201,
+          "kinds": [
+            "compute"
+          ],
+          "used_memory_bytes": 22326280192,
+          "name": "/tmp/revive-alfworld-env/bin/python"
+        },
+        {
+          "pid": 2208944,
+          "kinds": [
+            "compute"
+          ],
+          "used_memory_bytes": 10223616000,
+          "name": "/data1/student/fdq/anaconda3/envs/embodied-slam/bin/python"
+        },
+        {
+          "pid": 4037,
+          "kinds": [
+            "graphics"
+          ],
+          "used_memory_bytes": 4677632,
+          "name": "/usr/lib/xorg/Xorg"
+        }
+      ],
+      "temperature_c": 72,
+      "power_mw": 357707,
+      "sm_clock_mhz": 2625
+    },
+    {
+      "time_utc": "2026-10-15T07:40:41.760163+00:00",
+      "monotonic_ns": 379496489028142,
+      "uuid": "GPU-65eb0868-8c9c-735a-db98-49ecae46b4a4",
+      "name": "NVIDIA GeForce RTX 4090",
+      "memory_used_bytes": 27394048,
+      "memory_reserved_bytes": 662634496,
+      "memory_total_bytes": 51527024640,
+      "gpu_util_percent": 0,
+      "memory_util_percent": 0,
+      "processes": [
+        {
+          "pid": 4037,
+          "kinds": [
+            "graphics"
+          ],
+          "used_memory_bytes": 4677632,
+          "name": "/usr/lib/xorg/Xorg"
+        }
+      ],
+      "temperature_c": 49,
+      "power_mw": 52196,
+      "sm_clock_mhz": 2520
+    },
+    {
+      "time_utc": "2026-10-15T07:40:41.761269+00:00",
+      "monotonic_ns": 379496490135580,
+      "uuid": "GPU-ab7ba07b-7a77-651b-0acc-825c3c61bce5",
+      "name": "NVIDIA GeForce RTX 4090",
+      "memory_used_bytes": 35286941696,
+      "memory_reserved_bytes": 662634496,
+      "memory_total_bytes": 51527024640,
+      "gpu_util_percent": 100,
+      "memory_util_percent": 73,
+      "processes": [
+        {
+          "pid": 2113824,
+          "kinds": [
+            "compute"
+          ],
+          "used_memory_bytes": 14849933312,
+          "name": "/data1/student/fdq/anaconda3/envs/embodied-slam/bin/python"
+        },
+        {
+          "pid": 2237314,
+          "kinds": [
+            "compute"
+          ],
+          "used_memory_bytes": 10196353024,
+          "name": "/data1/student/fdq/anaconda3/envs/embodied-slam/bin/python"
+        },
+        {
+          "pid": 2267880,
+          "kinds": [
+            "compute"
+          ],
+          "used_memory_bytes": 10196353024,
+          "name": "/data1/student/fdq/anaconda3/envs/embodied-slam/bin/python"
+        },
+        {
+          "pid": 4037,
+          "kinds": [
+            "graphics"
+          ],
+          "used_memory_bytes": 4677632,
+          "name": "/usr/lib/xorg/Xorg"
+        }
+      ],
+      "temperature_c": 69,
+      "power_mw": 327526,
+      "sm_clock_mhz": 2640
+    },
+    {
+      "time_utc": "2026-10-15T07:40:41.762413+00:00",
+      "monotonic_ns": 379496491282441,
+      "uuid": "GPU-b37a6ba9-5472-3c53-39f9-557b98ea7437",
+      "name": "NVIDIA GeForce RTX 4090",
+      "memory_used_bytes": 40865562624,
+      "memory_reserved_bytes": 662634496,
+      "memory_total_bytes": 51527024640,
+      "gpu_util_percent": 80,
+      "memory_util_percent": 22,
+      "processes": [
+        {
+          "pid": 1854165,
+          "kinds": [
+            "compute"
+          ],
+          "used_memory_bytes": 14849933312,
+          "name": "/data1/student/fdq/anaconda3/envs/embodied-slam/bin/python"
+        },
+        {
+          "pid": 2237313,
+          "kinds": [
+            "compute"
+          ],
+          "used_memory_bytes": 12985565184,
+          "name": "/data1/student/fdq/anaconda3/envs/embodied-slam/bin/python"
+        },
+        {
+          "pid": 2264137,
+          "kinds": [
+            "compute"
+          ],
+          "used_memory_bytes": 12985565184,
+          "name": "/data1/student/fdq/anaconda3/envs/embodied-slam/bin/python"
+        },
+        {
+          "pid": 4037,
+          "kinds": [
+            "graphics"
+          ],
+          "used_memory_bytes": 4677632,
+          "name": "/usr/lib/xorg/Xorg"
+        }
+      ],
+      "temperature_c": 66,
+      "power_mw": 296468,
+      "sm_clock_mhz": 2760
+    },
+    {
+      "time_utc": "2026-10-15T07:40:41.763208+00:00",
+      "monotonic_ns": 379496492074537,
+      "uuid": "GPU-ad37eef5-b84e-3feb-bc21-3b1646414a8f",
+      "name": "NVIDIA GeForce RTX 4090",
+      "memory_used_bytes": 47396356096,
+      "memory_reserved_bytes": 662634496,
+      "memory_total_bytes": 51527024640,
+      "gpu_util_percent": 77,
+      "memory_util_percent": 20,
+      "processes": [
+        {
+          "pid": 709069,
+          "kinds": [
+            "compute"
+          ],
+          "used_memory_bytes": 34372321280,
+          "name": "python3"
+        },
+        {
+          "pid": 2237315,
+          "kinds": [
+            "compute"
+          ],
+          "used_memory_bytes": 12985565184,
+          "name": "/data1/student/fdq/anaconda3/envs/embodied-slam/bin/python"
+        },
+        {
+          "pid": 4037,
+          "kinds": [
+            "graphics"
+          ],
+          "used_memory_bytes": 4677632,
+          "name": "/usr/lib/xorg/Xorg"
+        }
+      ],
+      "temperature_c": 56,
+      "power_mw": 185613,
+      "sm_clock_mhz": 2625
+    },
+    {
+      "time_utc": "2026-10-15T07:40:41.764366+00:00",
+      "monotonic_ns": 379496493231257,
+      "uuid": "GPU-b9c00326-f1ad-f9dc-8b6c-38579886d483",
+      "name": "NVIDIA GeForce RTX 4090",
+      "memory_used_bytes": 50504925184,
+      "memory_reserved_bytes": 662634496,
+      "memory_total_bytes": 51527024640,
+      "gpu_util_percent": 100,
+      "memory_util_percent": 43,
+      "processes": [
+        {
+          "pid": 2238960,
+          "kinds": [
+            "compute"
+          ],
+          "used_memory_bytes": 19881000960,
+          "name": "/data1/student/xbh/mycode/FlashVID/.venv/bin/python"
+        },
+        {
+          "pid": 2237311,
+          "kinds": [
+            "compute"
+          ],
+          "used_memory_bytes": 10196353024,
+          "name": "/data1/student/fdq/anaconda3/envs/embodied-slam/bin/python"
+        },
+        {
+          "pid": 2237310,
+          "kinds": [
+            "compute"
+          ],
+          "used_memory_bytes": 11561598976,
+          "name": "/data1/student/fdq/anaconda3/envs/embodied-slam/bin/python"
+        },
+        {
+          "pid": 2237309,
+          "kinds": [
+            "compute"
+          ],
+          "used_memory_bytes": 8816427008,
+          "name": "/data1/student/fdq/anaconda3/envs/embodied-slam/bin/python"
+        },
+        {
+          "pid": 4037,
+          "kinds": [
+            "graphics"
+          ],
+          "used_memory_bytes": 4677632,
+          "name": "/usr/lib/xorg/Xorg"
+        }
+      ],
+      "temperature_c": 76,
+      "power_mw": 371232,
+      "sm_clock_mhz": 2760
+    },
+    {
+      "time_utc": "2026-10-15T07:40:41.765412+00:00",
+      "monotonic_ns": 379496494277888,
+      "uuid": "GPU-a80c9d3e-f9ec-9e55-3fe3-21b1939941e2",
+      "name": "NVIDIA GeForce RTX 4090",
+      "memory_used_bytes": 45880639488,
+      "memory_reserved_bytes": 662634496,
+      "memory_total_bytes": 51527024640,
+      "gpu_util_percent": 100,
+      "memory_util_percent": 92,
+      "processes": [
+        {
+          "pid": 198758,
+          "kinds": [
+            "compute"
+          ],
+          "used_memory_bytes": 45845839872,
+          "name": "VLLM::Worker_TP0"
+        },
+        {
+          "pid": 4037,
+          "kinds": [
+            "graphics"
+          ],
+          "used_memory_bytes": 4677632,
+          "name": "/usr/lib/xorg/Xorg"
+        }
+      ],
+      "temperature_c": 69,
+      "power_mw": 340976,
+      "sm_clock_mhz": 2700
+    },
+    {
+      "time_utc": "2026-10-15T07:40:41.766270+00:00",
+      "monotonic_ns": 379496495135008,
+      "uuid": "GPU-081919b8-5ace-cba5-0ff8-12f61157f210",
+      "name": "NVIDIA GeForce RTX 4090",
+      "memory_used_bytes": 45341868032,
+      "memory_reserved_bytes": 662634496,
+      "memory_total_bytes": 51527024640,
+      "gpu_util_percent": 100,
+      "memory_util_percent": 93,
+      "processes": [
+        {
+          "pid": 198759,
+          "kinds": [
+            "compute"
+          ],
+          "used_memory_bytes": 45306871808,
+          "name": "VLLM::Worker_TP1"
+        },
+        {
+          "pid": 4037,
+          "kinds": [
+            "graphics"
+          ],
+          "used_memory_bytes": 4677632,
+          "name": "/usr/lib/xorg/Xorg"
+        }
+      ],
+      "temperature_c": 66,
+      "power_mw": 322862,
+      "sm_clock_mhz": 2700
+    },
+    {
+      "time_utc": "2026-10-15T07:40:42.268042+00:00",
+      "monotonic_ns": 379496996919693,
+      "uuid": "GPU-2fc1ac98-6248-c0db-2b5b-0197d2aca409",
+      "name": "NVIDIA GeForce RTX 4090",
+      "memory_used_bytes": 35699884032,
+      "memory_reserved_bytes": 662634496,
+      "memory_total_bytes": 51527024640,
+      "gpu_util_percent": 95,
+      "memory_util_percent": 68,
+      "processes": [
+        {
+          "pid": 123839,
+          "kinds": [
+            "compute"
+          ],
+          "used_memory_bytes": 3105882112,
+          "name": "/usr/bin/python3"
+        },
+        {
+          "pid": 1339201,
+          "kinds": [
+            "compute"
+          ],
+          "used_memory_bytes": 22326280192,
+          "name": "/tmp/revive-alfworld-env/bin/python"
+        },
+        {
+          "pid": 2208944,
+          "kinds": [
+            "compute"
+          ],
+          "used_memory_bytes": 10223616000,
+          "name": "/data1/student/fdq/anaconda3/envs/embodied-slam/bin/python"
+        },
+        {
+          "pid": 4037,
+          "kinds": [
+            "graphics"
+          ],
+          "used_memory_bytes": 4677632,
+          "name": "/usr/lib/xorg/Xorg"
+        }
+      ],
+      "temperature_c": 81,
+      "power_mw": 380840,
+      "sm_clock_mhz": 2625
+    },
+    {
+      "time_utc": "2026-10-15T07:40:42.268470+00:00",
+      "monotonic_ns": 379496997336350,
+      "uuid": "GPU-65eb0868-8c9c-735a-db98-49ecae46b4a4",
+      "name": "NVIDIA GeForce RTX 4090",
+      "memory_used_bytes": 27394048,
+      "memory_reserved_bytes": 662634496,
+      "memory_total_bytes": 51527024640,
+      "gpu_util_percent": 0,
+      "memory_util_percent": 0,
+      "processes": [
+        {
+          "pid": 4037,
+          "kinds": [
+            "graphics"
+          ],
+          "used_memory_bytes": 4677632,
+          "name": "/usr/lib/xorg/Xorg"
+        }
+      ],
+      "temperature_c": 49,
+      "power_mw": 73999,
+      "sm_clock_mhz": 2520
+    },
+    {
+      "time_utc": "2026-10-15T07:40:42.269622+00:00",
+      "monotonic_ns": 379496998489368,
+      "uuid": "GPU-ab7ba07b-7a77-651b-0acc-825c3c61bce5",
+      "name": "NVIDIA GeForce RTX 4090",
+      "memory_used_bytes": 35286941696,
+      "memory_reserved_bytes": 662634496,
+      "memory_total_bytes": 51527024640,
+      "gpu_util_percent": 91,
+      "memory_util_percent": 37,
+      "processes": [
+        {
+          "pid": 2113824,
+          "kinds": [
+            "compute"
+          ],
+          "used_memory_bytes": 14849933312,
+          "name": "/data1/student/fdq/anaconda3/envs/embodied-slam/bin/python"
+        },
+        {
+          "pid": 2237314,
+          "kinds": [
+            "compute"
+          ],
+          "used_memory_bytes": 10196353024,
+          "name": "/data1/student/fdq/anaconda3/envs/embodied-slam/bin/python"
+        },
+        {
+          "pid": 2267880,
+          "kinds": [
+            "compute"
+          ],
+          "used_memory_bytes": 10196353024,
+          "name": "/data1/student/fdq/anaconda3/envs/embodied-slam/bin/python"
+        },
+        {
+          "pid": 4037,
+          "kinds": [
+            "graphics"
+          ],
+          "used_memory_bytes": 4677632,
+          "name": "/usr/lib/xorg/Xorg"
+        }
+      ],
+      "temperature_c": 66,
+      "power_mw": 320959,
+      "sm_clock_mhz": 2640
+    },
+    {
+      "time_utc": "2026-10-15T07:40:42.270818+00:00",
+      "monotonic_ns": 379496999684877,
+      "uuid": "GPU-b37a6ba9-5472-3c53-39f9-557b98ea7437",
+      "name": "NVIDIA GeForce RTX 4090",
+      "memory_used_bytes": 40865562624,
+      "memory_reserved_bytes": 662634496,
+      "memory_total_bytes": 51527024640,
+      "gpu_util_percent": 80,
+      "memory_util_percent": 22,
+      "processes": [
+        {
+          "pid": 1854165,
+          "kinds": [
+            "compute"
+          ],
+          "used_memory_bytes": 14849933312,
+          "name": "/data1/student/fdq/anaconda3/envs/embodied-slam/bin/python"
+        },
+        {
+          "pid": 2237313,
+          "kinds": [
+            "compute"
+          ],
+          "used_memory_bytes": 12985565184,
+          "name": "/data1/student/fdq/anaconda3/envs/embodied-slam/bin/python"
+        },
+        {
+          "pid": 2264137,
+          "kinds": [
+            "compute"
+          ],
+          "used_memory_bytes": 12985565184,
+          "name": "/data1/student/fdq/anaconda3/envs/embodied-slam/bin/python"
+        },
+        {
+          "pid": 4037,
+          "kinds": [
+            "graphics"
+          ],
+          "used_memory_bytes": 4677632,
+          "name": "/usr/lib/xorg/Xorg"
+        }
+      ],
+      "temperature_c": 68,
+      "power_mw": 300401,
+      "sm_clock_mhz": 2760
+    },
+    {
+      "time_utc": "2026-10-15T07:40:42.271648+00:00",
+      "monotonic_ns": 379497000513530,
+      "uuid": "GPU-ad37eef5-b84e-3feb-bc21-3b1646414a8f",
+      "name": "NVIDIA GeForce RTX 4090",
+      "memory_used_bytes": 47396356096,
+      "memory_reserved_bytes": 662634496,
+      "memory_total_bytes": 51527024640,
+      "gpu_util_percent": 77,
+      "memory_util_percent": 20,
+      "processes": [
+        {
+          "pid": 709069,
+          "kinds": [
+            "compute"
+          ],
+          "used_memory_bytes": 34372321280,
+          "name": "python3"
+        },
+        {
+          "pid": 2237315,
+          "kinds": [
+            "compute"
+          ],
+          "used_memory_bytes": 12985565184,
+          "name": "/data1/student/fdq/anaconda3/envs/embodied-slam/bin/python"
+        },
+        {
+          "pid": 4037,
+          "kinds": [
+            "graphics"
+          ],
+          "used_memory_bytes": 4677632,
+          "name": "/usr/lib/xorg/Xorg"
+        }
+      ],
+      "temperature_c": 57,
+      "power_mw": 181898,
+      "sm_clock_mhz": 2625
+    },
+    {
+      "time_utc": "2026-10-15T07:40:42.272844+00:00",
+      "monotonic_ns": 379497001710221,
+      "uuid": "GPU-b9c00326-f1ad-f9dc-8b6c-38579886d483",
+      "name": "NVIDIA GeForce RTX 4090",
+      "memory_used_bytes": 50504925184,
+      "memory_reserved_bytes": 662634496,
+      "memory_total_bytes": 51527024640,
+      "gpu_util_percent": 100,
+      "memory_util_percent": 39,
+      "processes": [
+        {
+          "pid": 2238960,
+          "kinds": [
+            "compute"
+          ],
+          "used_memory_bytes": 19881000960,
+          "name": "/data1/student/xbh/mycode/FlashVID/.venv/bin/python"
+        },
+        {
+          "pid": 2237311,
+          "kinds": [
+            "compute"
+          ],
+          "used_memory_bytes": 10196353024,
+          "name": "/data1/student/fdq/anaconda3/envs/embodied-slam/bin/python"
+        },
+        {
+          "pid": 2237310,
+          "kinds": [
+            "compute"
+          ],
+          "used_memory_bytes": 11561598976,
+          "name": "/data1/student/fdq/anaconda3/envs/embodied-slam/bin/python"
+        },
+        {
+          "pid": 2237309,
+          "kinds": [
+            "compute"
+          ],
+          "used_memory_bytes": 8816427008,
+          "name": "/data1/student/fdq/anaconda3/envs/embodied-slam/bin/python"
+        },
+        {
+          "pid": 4037,
+          "kinds": [
+            "graphics"
+          ],
+          "used_memory_bytes": 4677632,
+          "name": "/usr/lib/xorg/Xorg"
+        }
+      ],
+      "temperature_c": 77,
+      "power_mw": 373516,
+      "sm_clock_mhz": 2760
+    },
+    {
+      "time_utc": "2026-10-15T07:40:42.273935+00:00",
+      "monotonic_ns": 379497002800441,
+      "uuid": "GPU-a80c9d3e-f9ec-9e55-3fe3-21b1939941e2",
+      "name": "NVIDIA GeForce RTX 4090",
+      "memory_used_bytes": 45880639488,
+      "memory_reserved_bytes": 662634496,
+      "memory_total_bytes": 51527024640,
+      "gpu_util_percent": 100,
+      "memory_util_percent": 92,
+      "processes": [
+        {
+          "pid": 198758,
+          "kinds": [
+            "compute"
+          ],
+          "used_memory_bytes": 45845839872,
+          "name": "VLLM::Worker_TP0"
+        },
+        {
+          "pid": 4037,
+          "kinds": [
+            "graphics"
+          ],
+          "used_memory_bytes": 4677632,
+          "name": "/usr/lib/xorg/Xorg"
+        }
+      ],
+      "temperature_c": 69,
+      "power_mw": 340974,
+      "sm_clock_mhz": 2700
+    },
+    {
+      "time_utc": "2026-10-15T07:40:42.274889+00:00",
+      "monotonic_ns": 379497003755188,
+      "uuid": "GPU-081919b8-5ace-cba5-0ff8-12f61157f210",
+      "name": "NVIDIA GeForce RTX 4090",
+      "memory_used_bytes": 45341868032,
+      "memory_reserved_bytes": 662634496,
+      "memory_total_bytes": 51527024640,
+      "gpu_util_percent": 100,
+      "memory_util_percent": 93,
+      "processes": [
+        {
+          "pid": 198759,
+          "kinds": [
+            "compute"
+          ],
+          "used_memory_bytes": 45306871808,
+          "name": "VLLM::Worker_TP1"
+        },
+        {
+          "pid": 4037,
+          "kinds": [
+            "graphics"
+          ],
+          "used_memory_bytes": 4677632,
+          "name": "/usr/lib/xorg/Xorg"
+        }
+      ],
+      "temperature_c": 66,
+      "power_mw": 322673,
+      "sm_clock_mhz": 2700
+    },
+    {
+      "time_utc": "2026-10-15T07:40:42.776440+00:00",
+      "monotonic_ns": 379497505314844,
+      "uuid": "GPU-2fc1ac98-6248-c0db-2b5b-0197d2aca409",
+      "name": "NVIDIA GeForce RTX 4090",
+      "memory_used_bytes": 35699884032,
+      "memory_reserved_bytes": 662634496,
+      "memory_total_bytes": 51527024640,
+      "gpu_util_percent": 94,
+      "memory_util_percent": 79,
+      "processes": [
+        {
+          "pid": 123839,
+          "kinds": [
+            "compute"
+          ],
+          "used_memory_bytes": 3105882112,
+          "name": "/usr/bin/python3"
+        },
+        {
+          "pid": 1339201,
+          "kinds": [
+            "compute"
+          ],
+          "used_memory_bytes": 22326280192,
+          "name": "/tmp/revive-alfworld-env/bin/python"
+        },
+        {
+          "pid": 2208944,
+          "kinds": [
+            "compute"
+          ],
+          "used_memory_bytes": 10223616000,
+          "name": "/data1/student/fdq/anaconda3/envs/embodied-slam/bin/python"
+        },
+        {
+          "pid": 4037,
+          "kinds": [
+            "graphics"
+          ],
+          "used_memory_bytes": 4677632,
+          "name": "/usr/lib/xorg/Xorg"
+        }
+      ],
+      "temperature_c": 77,
+      "power_mw": 402716,
+      "sm_clock_mhz": 2625
+    },
+    {
+      "time_utc": "2026-10-15T07:40:42.776852+00:00",
+      "monotonic_ns": 379497505717522,
+      "uuid": "GPU-65eb0868-8c9c-735a-db98-49ecae46b4a4",
+      "name": "NVIDIA GeForce RTX 4090",
+      "memory_used_bytes": 27394048,
+      "memory_reserved_bytes": 662634496,
+      "memory_total_bytes": 51527024640,
+      "gpu_util_percent": 0,
+      "memory_util_percent": 0,
+      "processes": [
+        {
+          "pid": 4037,
+          "kinds": [
+            "graphics"
+          ],
+          "used_memory_bytes": 4677632,
+          "name": "/usr/lib/xorg/Xorg"
+        }
+      ],
+      "temperature_c": 49,
+      "power_mw": 73999,
+      "sm_clock_mhz": 2520
+    },
+    {
+      "time_utc": "2026-10-15T07:40:42.777979+00:00",
+      "monotonic_ns": 379497506845215,
+      "uuid": "GPU-ab7ba07b-7a77-651b-0acc-825c3c61bce5",
+      "name": "NVIDIA GeForce RTX 4090",
+      "memory_used_bytes": 35286941696,
+      "memory_reserved_bytes": 662634496,
+      "memory_total_bytes": 51527024640,
+      "gpu_util_percent": 99,
+      "memory_util_percent": 61,
+      "processes": [
+        {
+          "pid": 2113824,
+          "kinds": [
+            "compute"
+          ],
+          "used_memory_bytes": 14849933312,
+          "name": "/data1/student/fdq/anaconda3/envs/embodied-slam/bin/python"
+        },
+        {
+          "pid": 2237314,
+          "kinds": [
+            "compute"
+          ],
+          "used_memory_bytes": 10196353024,
+          "name": "/data1/student/fdq/anaconda3/envs/embodied-slam/bin/python"
+        },
+        {
+          "pid": 2267880,
+          "kinds": [
+            "compute"
+          ],
+          "used_memory_bytes": 10196353024,
+          "name": "/data1/student/fdq/anaconda3/envs/embodied-slam/bin/python"
+        },
+        {
+          "pid": 4037,
+          "kinds": [
+            "graphics"
+          ],
+          "used_memory_bytes": 4677632,
+          "name": "/usr/lib/xorg/Xorg"
+        }
+      ],
+      "temperature_c": 70,
+      "power_mw": 327610,
+      "sm_clock_mhz": 2640
+    },
+    {
+      "time_utc": "2026-10-15T07:40:42.779182+00:00",
+      "monotonic_ns": 379497508049142,
+      "uuid": "GPU-b37a6ba9-5472-3c53-39f9-557b98ea7437",
+      "name": "NVIDIA GeForce RTX 4090",
+      "memory_used_bytes": 40865562624,
+      "memory_reserved_bytes": 662634496,
+      "memory_total_bytes": 51527024640,
+      "gpu_util_percent": 87,
+      "memory_util_percent": 35,
+      "processes": [
+        {
+          "pid": 1854165,
+          "kinds": [
+            "compute"
+          ],
+          "used_memory_bytes": 14849933312,
+          "name": "/data1/student/fdq/anaconda3/envs/embodied-slam/bin/python"
+        },
+        {
+          "pid": 2237313,
+          "kinds": [
+            "compute"
+          ],
+          "used_memory_bytes": 12985565184,
+          "name": "/data1/student/fdq/anaconda3/envs/embodied-slam/bin/python"
+        },
+        {
+          "pid": 2264137,
+          "kinds": [
+            "compute"
+          ],
+          "used_memory_bytes": 12985565184,
+          "name": "/data1/student/fdq/anaconda3/envs/embodied-slam/bin/python"
+        },
+        {
+          "pid": 4037,
+          "kinds": [
+            "graphics"
+          ],
+          "used_memory_bytes": 4677632,
+          "name": "/usr/lib/xorg/Xorg"
+        }
+      ],
+      "temperature_c": 68,
+      "power_mw": 298416,
+      "sm_clock_mhz": 2760
+    },
+    {
+      "time_utc": "2026-10-15T07:40:42.779987+00:00",
+      "monotonic_ns": 379497508852683,
+      "uuid": "GPU-ad37eef5-b84e-3feb-bc21-3b1646414a8f",
+      "name": "NVIDIA GeForce RTX 4090",
+      "memory_used_bytes": 47396356096,
+      "memory_reserved_bytes": 662634496,
+      "memory_total_bytes": 51527024640,
+      "gpu_util_percent": 41,
+      "memory_util_percent": 15,
+      "processes": [
+        {
+          "pid": 709069,
+          "kinds": [
+            "compute"
+          ],
+          "used_memory_bytes": 34372321280,
+          "name": "python3"
+        },
+        {
+          "pid": 2237315,
+          "kinds": [
+            "compute"
+          ],
+          "used_memory_bytes": 12985565184,
+          "name": "/data1/student/fdq/anaconda3/envs/embodied-slam/bin/python"
+        },
+        {
+          "pid": 4037,
+          "kinds": [
+            "graphics"
+          ],
+          "used_memory_bytes": 4677632,
+          "name": "/usr/lib/xorg/Xorg"
+        }
+      ],
+      "temperature_c": 55,
+      "power_mw": 186469,
+      "sm_clock_mhz": 2625
+    },
+    {
+      "time_utc": "2026-10-15T07:40:42.781179+00:00",
+      "monotonic_ns": 379497510045344,
+      "uuid": "GPU-b9c00326-f1ad-f9dc-8b6c-38579886d483",
+      "name": "NVIDIA GeForce RTX 4090",
+      "memory_used_bytes": 50504925184,
+      "memory_reserved_bytes": 662634496,
+      "memory_total_bytes": 51527024640,
+      "gpu_util_percent": 100,
+      "memory_util_percent": 39,
+      "processes": [
+        {
+          "pid": 2238960,
+          "kinds": [
+            "compute"
+          ],
+          "used_memory_bytes": 19881000960,
+          "name": "/data1/student/xbh/mycode/FlashVID/.venv/bin/python"
+        },
+        {
+          "pid": 2237311,
+          "kinds": [
+            "compute"
+          ],
+          "used_memory_bytes": 10196353024,
+          "name": "/data1/student/fdq/anaconda3/envs/embodied-slam/bin/python"
+        },
+        {
+          "pid": 2237310,
+          "kinds": [
+            "compute"
+          ],
+          "used_memory_bytes": 11561598976,
+          "name": "/data1/student/fdq/anaconda3/envs/embodied-slam/bin/python"
+        },
+        {
+          "pid": 2237309,
+          "kinds": [
+            "compute"
+          ],
+          "used_memory_bytes": 8816427008,
+          "name": "/data1/student/fdq/anaconda3/envs/embodied-slam/bin/python"
+        },
+        {
+          "pid": 4037,
+          "kinds": [
+            "graphics"
+          ],
+          "used_memory_bytes": 4677632,
+          "name": "/usr/lib/xorg/Xorg"
+        }
+      ],
+      "temperature_c": 78,
+      "power_mw": 382890,
+      "sm_clock_mhz": 2760
+    },
+    {
+      "time_utc": "2026-10-15T07:40:42.782356+00:00",
+      "monotonic_ns": 379497511223707,
+      "uuid": "GPU-a80c9d3e-f9ec-9e55-3fe3-21b1939941e2",
+      "name": "NVIDIA GeForce RTX 4090",
+      "memory_used_bytes": 45880639488,
+      "memory_reserved_bytes": 662634496,
+      "memory_total_bytes": 51527024640,
+      "gpu_util_percent": 100,
+      "memory_util_percent": 93,
+      "processes": [
+        {
+          "pid": 198758,
+          "kinds": [
+            "compute"
+          ],
+          "used_memory_bytes": 45845839872,
+          "name": "VLLM::Worker_TP0"
+        },
+        {
+          "pid": 4037,
+          "kinds": [
+            "graphics"
+          ],
+          "used_memory_bytes": 4677632,
+          "name": "/usr/lib/xorg/Xorg"
+        }
+      ],
+      "temperature_c": 69,
+      "power_mw": 340838,
+      "sm_clock_mhz": 2700
+    },
+    {
+      "time_utc": "2026-10-15T07:40:42.783370+00:00",
+      "monotonic_ns": 379497512236962,
+      "uuid": "GPU-081919b8-5ace-cba5-0ff8-12f61157f210",
+      "name": "NVIDIA GeForce RTX 4090",
+      "memory_used_bytes": 45341868032,
+      "memory_reserved_bytes": 662634496,
+      "memory_total_bytes": 51527024640,
+      "gpu_util_percent": 100,
+      "memory_util_percent": 93,
+      "processes": [
+        {
+          "pid": 198759,
+          "kinds": [
+            "compute"
+          ],
+          "used_memory_bytes": 45306871808,
+          "name": "VLLM::Worker_TP1"
+        },
+        {
+          "pid": 4037,
+          "kinds": [
+            "graphics"
+          ],
+          "used_memory_bytes": 4677632,
+          "name": "/usr/lib/xorg/Xorg"
+        }
+      ],
+      "temperature_c": 66,
+      "power_mw": 322420,
+      "sm_clock_mhz": 2700
+    },
+    {
+      "time_utc": "2026-10-15T07:40:43.285502+00:00",
+      "monotonic_ns": 379498014384296,
+      "uuid": "GPU-2fc1ac98-6248-c0db-2b5b-0197d2aca409",
+      "name": "NVIDIA GeForce RTX 4090",
+      "memory_used_bytes": 35699884032,
+      "memory_reserved_bytes": 662634496,
+      "memory_total_bytes": 51527024640,
+      "gpu_util_percent": 94,
+      "memory_util_percent": 79,
+      "processes": [
+        {
+          "pid": 123839,
+          "kinds": [
+            "compute"
+          ],
+          "used_memory_bytes": 3105882112,
+          "name": "/usr/bin/python3"
+        },
+        {
+          "pid": 1339201,
+          "kinds": [
+            "compute"
+          ],
+          "used_memory_bytes": 22326280192,
+          "name": "/tmp/revive-alfworld-env/bin/python"
+        },
+        {
+          "pid": 2208944,
+          "kinds": [
+            "compute"
+          ],
+          "used_memory_bytes": 10223616000,
+          "name": "/data1/student/fdq/anaconda3/envs/embodied-slam/bin/python"
+        },
+        {
+          "pid": 4037,
+          "kinds": [
+            "graphics"
+          ],
+          "used_memory_bytes": 4677632,
+          "name": "/usr/lib/xorg/Xorg"
+        }
+      ],
+      "temperature_c": 79,
+      "power_mw": 383613,
+      "sm_clock_mhz": 2625
+    },
+    {
+      "time_utc": "2026-10-15T07:40:43.286179+00:00",
+      "monotonic_ns": 379498015049189,
+      "uuid": "GPU-65eb0868-8c9c-735a-db98-49ecae46b4a4",
+      "name": "NVIDIA GeForce RTX 4090",
+      "memory_used_bytes": 27394048,
+      "memory_reserved_bytes": 662634496,
+      "memory_total_bytes": 51527024640,
+      "gpu_util_percent": 0,
+      "memory_util_percent": 0,
+      "processes": [
+        {
+          "pid": 4037,
+          "kinds": [
+            "graphics"
+          ],
+          "used_memory_bytes": 4677632,
+          "name": "/usr/lib/xorg/Xorg"
+        }
+      ],
+      "temperature_c": 47,
+      "power_mw": 49409,
+      "sm_clock_mhz": 480
+    },
+    {
+      "time_utc": "2026-10-15T07:40:43.287884+00:00",
+      "monotonic_ns": 379498016754661,
+      "uuid": "GPU-ab7ba07b-7a77-651b-0acc-825c3c61bce5",
+      "name": "NVIDIA GeForce RTX 4090",
+      "memory_used_bytes": 35286941696,
+      "memory_reserved_bytes": 662634496,
+      "memory_total_bytes": 51527024640,
+      "gpu_util_percent": 99,
+      "memory_util_percent": 61,
+      "processes": [
+        {
+          "pid": 2113824,
+          "kinds": [
+            "compute"
+          ],
+          "used_memory_bytes": 14849933312,
+          "name": "/data1/student/fdq/anaconda3/envs/embodied-slam/bin/python"
+        },
+        {
+          "pid": 2237314,
+          "kinds": [
+            "compute"
+          ],
+          "used_memory_bytes": 10196353024,
+          "name": "/data1/student/fdq/anaconda3/envs/embodied-slam/bin/python"
+        },
+        {
+          "pid": 2267880,
+          "kinds": [
+            "compute"
+          ],
+          "used_memory_bytes": 10196353024,
+          "name": "/data1/student/fdq/anaconda3/envs/embodied-slam/bin/python"
+        },
+        {
+          "pid": 4037,
+          "kinds": [
+            "graphics"
+          ],
+          "used_memory_bytes": 4677632,
+          "name": "/usr/lib/xorg/Xorg"
+        }
+      ],
+      "temperature_c": 70,
+      "power_mw": 333165,
+      "sm_clock_mhz": 2640
+    },
+    {
+      "time_utc": "2026-10-15T07:40:43.289565+00:00",
+      "monotonic_ns": 379498018434276,
+      "uuid": "GPU-b37a6ba9-5472-3c53-39f9-557b98ea7437",
+      "name": "NVIDIA GeForce RTX 4090",
+      "memory_used_bytes": 40865562624,
+      "memory_reserved_bytes": 662634496,
+      "memory_total_bytes": 51527024640,
+      "gpu_util_percent": 87,
+      "memory_util_percent": 35,
+      "processes": [
+        {
+          "pid": 1854165,
+          "kinds": [
+            "compute"
+          ],
+          "used_memory_bytes": 14849933312,
+          "name": "/data1/student/fdq/anaconda3/envs/embodied-slam/bin/python"
+        },
+        {
+          "pid": 2237313,
+          "kinds": [
+            "compute"
+          ],
+          "used_memory_bytes": 12985565184,
+          "name": "/data1/student/fdq/anaconda3/envs/embodied-slam/bin/python"
+        },
+        {
+          "pid": 2264137,
+          "kinds": [
+            "compute"
+          ],
+          "used_memory_bytes": 12985565184,
+          "name": "/data1/student/fdq/anaconda3/envs/embodied-slam/bin/python"
+        },
+        {
+          "pid": 4037,
+          "kinds": [
+            "graphics"
+          ],
+          "used_memory_bytes": 4677632,
+          "name": "/usr/lib/xorg/Xorg"
+        }
+      ],
+      "temperature_c": 69,
+      "power_mw": 303759,
+      "sm_clock_mhz": 2760
+    },
+    {
+      "time_utc": "2026-10-15T07:40:43.290791+00:00",
+      "monotonic_ns": 379498019659767,
+      "uuid": "GPU-ad37eef5-b84e-3feb-bc21-3b1646414a8f",
+      "name": "NVIDIA GeForce RTX 4090",
+      "memory_used_bytes": 47396356096,
+      "memory_reserved_bytes": 662634496,
+      "memory_total_bytes": 51527024640,
+      "gpu_util_percent": 41,
+      "memory_util_percent": 15,
+      "processes": [
+        {
+          "pid": 709069,
+          "kinds": [
+            "compute"
+          ],
+          "used_memory_bytes": 34372321280,
+          "name": "python3"
+        },
+        {
+          "pid": 2237315,
+          "kinds": [
+            "compute"
+          ],
+          "used_memory_bytes": 12985565184,
+          "name": "/data1/student/fdq/anaconda3/envs/embodied-slam/bin/python"
+        },
+        {
+          "pid": 4037,
+          "kinds": [
+            "graphics"
+          ],
+          "used_memory_bytes": 4677632,
+          "name": "/usr/lib/xorg/Xorg"
+        }
+      ],
+      "temperature_c": 55,
+      "power_mw": 187802,
+      "sm_clock_mhz": 2625
+    },
+    {
+      "time_utc": "2026-10-15T07:40:43.292528+00:00",
+      "monotonic_ns": 379498021397658,
+      "uuid": "GPU-b9c00326-f1ad-f9dc-8b6c-38579886d483",
+      "name": "NVIDIA GeForce RTX 4090",
+      "memory_used_bytes": 50504925184,
+      "memory_reserved_bytes": 662634496,
+      "memory_total_bytes": 51527024640,
+      "gpu_util_percent": 100,
+      "memory_util_percent": 32,
+      "processes": [
+        {
+          "pid": 2238960,
+          "kinds": [
+            "compute"
+          ],
+          "used_memory_bytes": 19881000960,
+          "name": "/data1/student/xbh/mycode/FlashVID/.venv/bin/python"
+        },
+        {
+          "pid": 2237311,
+          "kinds": [
+            "compute"
+          ],
+          "used_memory_bytes": 10196353024,
+          "name": "/data1/student/fdq/anaconda3/envs/embodied-slam/bin/python"
+        },
+        {
+          "pid": 2237310,
+          "kinds": [
+            "compute"
+          ],
+          "used_memory_bytes": 11561598976,
+          "name": "/data1/student/fdq/anaconda3/envs/embodied-slam/bin/python"
+        },
+        {
+          "pid": 2237309,
+          "kinds": [
+            "compute"
+          ],
+          "used_memory_bytes": 8816427008,
+          "name": "/data1/student/fdq/anaconda3/envs/embodied-slam/bin/python"
+        },
+        {
+          "pid": 4037,
+          "kinds": [
+            "graphics"
+          ],
+          "used_memory_bytes": 4677632,
+          "name": "/usr/lib/xorg/Xorg"
+        }
+      ],
+      "temperature_c": 76,
+      "power_mw": 383356,
+      "sm_clock_mhz": 2760
+    },
+    {
+      "time_utc": "2026-10-15T07:40:43.294474+00:00",
+      "monotonic_ns": 379498023345975,
+      "uuid": "GPU-a80c9d3e-f9ec-9e55-3fe3-21b1939941e2",
+      "name": "NVIDIA GeForce RTX 4090",
+      "memory_used_bytes": 45880639488,
+      "memory_reserved_bytes": 662634496,
+      "memory_total_bytes": 51527024640,
+      "gpu_util_percent": 100,
+      "memory_util_percent": 93,
+      "processes": [
+        {
+          "pid": 198758,
+          "kinds": [
+            "compute"
+          ],
+          "used_memory_bytes": 45845839872,
+          "name": "VLLM::Worker_TP0"
+        },
+        {
+          "pid": 4037,
+          "kinds": [
+            "graphics"
+          ],
+          "used_memory_bytes": 4677632,
+          "name": "/usr/lib/xorg/Xorg"
+        }
+      ],
+      "temperature_c": 69,
+      "power_mw": 340654,
+      "sm_clock_mhz": 2700
+    },
+    {
+      "time_utc": "2026-10-15T07:40:43.295925+00:00",
+      "monotonic_ns": 379498024794635,
+      "uuid": "GPU-081919b8-5ace-cba5-0ff8-12f61157f210",
+      "name": "NVIDIA GeForce RTX 4090",
+      "memory_used_bytes": 45341868032,
+      "memory_reserved_bytes": 662634496,
+      "memory_total_bytes": 51527024640,
+      "gpu_util_percent": 100,
+      "memory_util_percent": 93,
+      "processes": [
+        {
+          "pid": 198759,
+          "kinds": [
+            "compute"
+          ],
+          "used_memory_bytes": 45306871808,
+          "name": "VLLM::Worker_TP1"
+        },
+        {
+          "pid": 4037,
+          "kinds": [
+            "graphics"
+          ],
+          "used_memory_bytes": 4677632,
+          "name": "/usr/lib/xorg/Xorg"
+        }
+      ],
+      "temperature_c": 66,
+      "power_mw": 322640,
+      "sm_clock_mhz": 2700
+    },
+    {
+      "time_utc": "2026-10-15T07:40:43.296723+00:00",
+      "monotonic_ns": 379498025594562,
+      "uuid": "GPU-65eb0868-8c9c-735a-db98-49ecae46b4a4",
+      "name": "NVIDIA GeForce RTX 4090",
+      "memory_used_bytes": 27394048,
+      "memory_reserved_bytes": 662634496,
+      "memory_total_bytes": 51527024640,
+      "gpu_util_percent": 0,
+      "memory_util_percent": 0,
+      "processes": [
+        {
+          "pid": 4037,
+          "kinds": [
+            "graphics"
+          ],
+          "used_memory_bytes": 4677632,
+          "name": "/usr/lib/xorg/Xorg"
+        }
+      ],
+      "temperature_c": 47,
+      "power_mw": 49409,
+      "sm_clock_mhz": 480
+    }
+  ],
+  "monitor": {
+    "valid": true,
+    "allowed_pid": 2355568,
+    "observed_owned_pids": [
+      2355568,
+      2355802
+    ],
+    "foreign_processes": [],
+    "errors": [],
+    "poll_interval_ms": 20.0,
+    "max_observation_gap_ms": 67.837582,
+    "peak_sampled_device_memory_bytes": 3168206848
+  },
+  "telemetry_file": "docs/performance/bringup/qwen2.5-0.5b_gpu_gate.nvml.json.gz",
+  "frozen_source_digest": "3ae7e3c700099acf5aece7debe517cf448e15c410567b925206e8bd9c8ca41dd"
+}
