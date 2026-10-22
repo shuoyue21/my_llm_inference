@@ -2,6 +2,7 @@
 #include <cublas_v2.h>
 #include <stdexcept>
 #include <unordered_map>
+#include <algorithm>
 #include "../op/kernels/cuda/prefill_kernels.cuh"
 #include "../op/kernels/cuda/decode_kernels.cuh"
 namespace runtime {
@@ -33,7 +34,34 @@ struct CudaBatchBackend::Impl {
   struct Request {
     std::unique_ptr<PagedKVCache> cache;
     int position = 0;
+    std::vector<int32_t> prompt;
   };
+  struct PrefixEntry {
+    std::vector<int32_t> tokens;
+    std::shared_ptr<const KVPrefixSnapshot> pages;
+    uint64_t last_used;
+  };
+  std::vector<PrefixEntry> prefixes;
+  uint64_t prefix_limit = 0, clock = 0;
+  PrefixCacheStats prefix_stats;
+  void publish(Request& request) {
+    if (!prefix_limit) return;
+    int count = (int(request.prompt.size()) - 1) / page_tokens * page_tokens;
+    if (!count) return;
+    std::vector<int32_t> tokens(request.prompt.begin(), request.prompt.begin() + count);
+    for (auto& entry : prefixes) if (entry.tokens == tokens) { entry.last_used = ++clock; return; }
+    auto pages = request.cache->capture_prefix(count);
+    if (pages->bytes() > prefix_limit) return;
+    while (prefix_stats.resident_bytes + pages->bytes() > prefix_limit) {
+      auto victim = std::min_element(prefixes.begin(), prefixes.end(),
+          [](const auto& a, const auto& b) { return a.last_used < b.last_used; });
+      prefix_stats.resident_bytes -= victim->pages->bytes();
+      prefixes.erase(victim); ++prefix_stats.evictions;
+    }
+    prefix_stats.resident_bytes += pages->bytes();
+    prefixes.push_back({std::move(tokens), std::move(pages), ++clock});
+  };
+
   std::unordered_map<RequestId, Request> requests;
   std::vector<std::unique_ptr<PagedKVCache>> idle_caches;
   Impl(PrefillWeights weights, std::shared_ptr<kernel::CudaConfig> cuda,
@@ -151,11 +179,37 @@ std::vector<TokenOutput> CudaBatchBackend::execute(const std::vector<ScheduledTo
   check(cudaGetLastError()); check(cudaStreamSynchronize(stream));
   std::vector<TokenOutput> result;
   for (int r = 0; r < rows; ++r) {
-    ++s.requests.at(batch[r].id).position;
+    auto& request = s.requests.at(batch[r].id);
+    ++request.position;
+    if (batch[r].prompt && request.position == int(request.prompt.size())) s.publish(request);
     result.push_back({tokens[r], s.is_eos(tokens[r])});
   }
   return result;
 }
+void CudaBatchBackend::configure_prefix_cache(uint64_t bytes) {
+  if (!impl_->requests.empty()) throw std::logic_error("Configure prefix cache before admitting requests");
+  impl_->prefixes.clear(); impl_->prefix_stats = {}; impl_->prefix_limit = bytes;
+}
+int CudaBatchBackend::reuse_prefix(RequestId id, const std::vector<int32_t>& tokens) {
+  auto& s = *impl_; auto& request = s.requests.at(id); request.prompt = tokens;
+  if (!s.prefix_limit) return 0;
+  ++s.prefix_stats.lookups;
+  Impl::PrefixEntry* best = nullptr;
+  int best_tokens = 0;
+  for (auto& entry : s.prefixes) {
+    int matched = 0;
+    int bound = std::min(entry.tokens.size(), tokens.size() - 1);
+    while (matched < bound && entry.tokens[matched] == tokens[matched]) ++matched;
+    matched = matched / s.page_tokens * s.page_tokens;
+    if (matched > best_tokens) { best_tokens = matched; best = &entry; }
+  }
+  if (!best) return 0;
+  request.cache->attach_prefix(*best->pages, best_tokens);
+  request.position = best_tokens; best->last_used = ++s.clock;
+  ++s.prefix_stats.hits; s.prefix_stats.reused_tokens += best_tokens;
+  return request.position;
+}
+PrefixCacheStats CudaBatchBackend::prefix_stats() const { return impl_->prefix_stats; }
 KVCacheStats CudaBatchBackend::cache_stats() const {
   KVCacheStats total; total.paged = true;
   auto add = [&](const auto& cache) { auto v = cache->stats();

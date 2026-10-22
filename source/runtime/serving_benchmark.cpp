@@ -33,7 +33,9 @@ void benchmark_serving(const model::Model& model, const std::string& prompt,
   auto ids = generation.prompt_token_ids.empty() ? model.encode(prompt) : generation.prompt_token_ids;
   std::unique_ptr<CudaBatchBackend> backend;
   if (options.mode == "continuous") backend = model.create_batch_backend(options.token_budget);
+  if (backend) backend->configure_prefix_cache(options.prefix_cache_bytes);
   for (int iteration = -warmups; iteration < repeats; ++iteration) {
+    auto prefix_before = backend ? backend->prefix_stats() : PrefixCacheStats{};
     auto start = Clock::now();
     std::vector<ServingResult> completed;
     if (backend) {
@@ -41,7 +43,8 @@ void benchmark_serving(const model::Model& model, const std::string& prompt,
       int submitted = 0;
       while (submitted < options.requests || !scheduler.empty()) {
         while (submitted < options.requests && since(start) >= submitted * options.arrival_interval_ms) {
-          scheduler.submit({uint64_t(submitted), ids, generation.max_new_tokens, generation.ignore_eos});
+          scheduler.submit({uint64_t(submitted), ids, generation.max_new_tokens, generation.ignore_eos,
+              std::max(0.0, since(start) - submitted * options.arrival_interval_ms)});
           ++submitted;
         }
         if (!scheduler.step() && submitted < options.requests)
@@ -74,7 +77,13 @@ void benchmark_serving(const model::Model& model, const std::string& prompt,
       generated += result.tokens.size();
       tpot.insert(tpot.end(), result.inter_token_ms.begin(), result.inter_token_ms.end());
     }
-    std::cout << std::setprecision(12) << "{\"serving_mode\":\"" << options.mode << "\",\"concurrency\":" << options.concurrency
+    auto prefix_after = backend ? backend->prefix_stats() : PrefixCacheStats{};
+    std::cout << "{\"prefix_cache_bytes\":" << prefix_after.resident_bytes
+        << ",\"prefix_lookups\":" << prefix_after.lookups - prefix_before.lookups
+        << ",\"prefix_hits\":" << prefix_after.hits - prefix_before.hits
+        << ",\"prefix_reused_tokens\":" << prefix_after.reused_tokens - prefix_before.reused_tokens
+        << ",\"prefix_evictions\":" << prefix_after.evictions - prefix_before.evictions << ',';
+    std::cout << std::setprecision(12) << "\"serving_mode\":\"" << options.mode << "\",\"concurrency\":" << options.concurrency
         << ",\"request_count\":" << options.requests << ",\"token_budget\":" << options.token_budget
         << ",\"arrival_interval_ms\":" << options.arrival_interval_ms << ",\"load_ms\":" << load_ms
         << ",\"gpu_load_memory_bytes\":" << load_memory << ",\"total_ms\":" << total

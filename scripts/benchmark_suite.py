@@ -19,6 +19,13 @@ def summarize(samples,prompt_length):
   for name in ['load_ms','total_ms','output_tokens_per_second','requests_per_second','ttft_ms','ttft_p95_ms','ttft_p99_ms','latency_p50_ms','latency_p95_ms','latency_p99_ms','tpot_p50_ms','tpot_p95_ms','tpot_p99_ms','queue_p95_ms','gpu_load_memory_bytes']:
    values=[sample[name] for sample in samples]
    metrics[name]={'median':statistics.median(values),'min':min(values),'max':max(values)}
+  for name in ['prefix_lookups','prefix_hits','prefix_reused_tokens','prefix_evictions','prefix_cache_bytes','linear_weight_bytes','attention_workspace_bytes']:
+   if all(name in sample for sample in samples):
+    values=[sample[name] for sample in samples]
+    metrics[name]={'median':statistics.median(values),'min':min(values),'max':max(values)}
+  if all('prefix_lookups' in sample for sample in samples):
+   values=[sample['prefix_hits']/sample['prefix_lookups'] if sample['prefix_lookups'] else 0 for sample in samples]
+   metrics['prefix_hit_rate']={'median':statistics.median(values),'min':min(values),'max':max(values)}
   return metrics
  for name in ['load_ms','tokenization_ms','ttft_ms','prefill_ms','decode_ms','total_ms','decode_tokens_per_second','gpu_load_memory_bytes']:
   values=[s[name] for s in samples]

@@ -77,7 +77,7 @@ int main(int argc, char** argv) {
       if (flag == "--json") { json = true; continue; }
       if (flag == "--quant") { quant = true; continue; }
       if (flag == "--ignore-eos") { options.ignore_eos = true; continue; }
-      if (flag == "--serving" || flag == "--concurrency" || flag == "--requests" || flag == "--token-budget" || flag == "--arrival-ms") {
+      if (flag == "--serving" || flag == "--concurrency" || flag == "--requests" || flag == "--token-budget" || flag == "--prefix-cache-mib" || flag == "--arrival-ms") {
         if (++i == argc) throw std::invalid_argument("Missing serving option value");
         std::string value = argv[i]; size_t end = 0;
         if (flag == "--serving") { serving.mode = value; serving_enabled = true; }
@@ -90,6 +90,7 @@ int main(int argc, char** argv) {
           if (flag == "--concurrency") serving.concurrency = number;
           if (flag == "--requests") serving.requests = number;
           if (flag == "--token-budget") serving.token_budget = number;
+          if (flag == "--prefix-cache-mib") { if (number < 0) throw std::invalid_argument("Negative prefix capacity"); serving.prefix_cache_bytes = uint64_t(number) * 1024 * 1024; }
         }
         continue;
       }

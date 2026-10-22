@@ -6,6 +6,7 @@ struct ServingBenchmarkOptions {
   int concurrency = 4;
   int requests = 32;
   int token_budget = 128;
+  uint64_t prefix_cache_bytes = 0;
   double arrival_interval_ms = 0;
 };
 void benchmark_serving(const model::Model& model, const std::string& prompt,

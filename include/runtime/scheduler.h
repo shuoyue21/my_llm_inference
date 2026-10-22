@@ -28,12 +28,14 @@ class BatchBackend {
   virtual void admit(RequestId id) = 0;
   virtual std::vector<TokenOutput> execute(const std::vector<ScheduledToken>& batch) = 0;
   virtual void release(RequestId id) = 0;
+  virtual int reuse_prefix(RequestId, const std::vector<int32_t>&) { return 0; }
 };
 struct ServingRequest {
   RequestId id;
   std::vector<int32_t> prompt;
   int max_new_tokens = 64;
   bool ignore_eos = false;
+  double initial_queue_ms = 0;
 };
 struct ServingResult {
   RequestId id;

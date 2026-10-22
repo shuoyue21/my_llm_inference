@@ -79,3 +79,32 @@ TEST(runtime_cuda, paged_random_mapping_causal_gqa_and_layer_separation) {
   }
   EXPECT_TRUE(mapping_changed);cache.trim();EXPECT_EQ(cache.stats().reserved_bytes,0);
 }
+
+TEST(runtime_cuda, shared_prefix_pages_remain_alive_and_append_is_private) {
+  if (!paged_cuda_available()) GTEST_SKIP();
+  auto config = std::make_shared<kernel::CudaConfig>();
+  ASSERT_EQ(cudaStreamCreate(&config->stream), cudaSuccess);
+  runtime::PagedKVCache owner(2, 32, 8, 4, config), borrower(2, 32, 8, 4, config);
+  owner.begin_request(); owner.ensure_tokens(8);
+  float marker = 42.f;
+  ASSERT_EQ(cudaMemcpy(owner.slot(0, 0).first, &marker, sizeof(float), cudaMemcpyHostToDevice), cudaSuccess);
+  auto original = owner.slot(0, 0).first;
+  auto lease = owner.capture_prefix(8);
+  owner.release_request(); owner.trim();
+  EXPECT_EQ(owner.stats().reserved_bytes, lease->bytes());
+  borrower.begin_request(); borrower.attach_prefix(*lease);
+  EXPECT_EQ(borrower.slot(0, 0).first, original);
+  float value = 0;
+  ASSERT_EQ(cudaMemcpy(&value, borrower.slot(0, 0).first, sizeof(float), cudaMemcpyDeviceToHost), cudaSuccess);
+  EXPECT_FLOAT_EQ(value, marker);
+  borrower.ensure_tokens(9);
+  auto shared = borrower.slot(0, 0).first;
+  EXPECT_NE(borrower.slot(0, 8).first, shared);
+  owner.begin_request(); owner.ensure_tokens(4);
+  EXPECT_NE(owner.slot(0, 0).first, shared);
+  owner.release_request(); borrower.release_request();
+  owner.trim(); borrower.trim();
+  EXPECT_EQ(owner.stats().reserved_bytes, lease->bytes());
+  lease.reset(); owner.trim();
+  EXPECT_EQ(owner.stats().reserved_bytes, 0);
+}

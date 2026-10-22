@@ -92,6 +92,7 @@ TEST(scheduler_cuda, mixed_requests_match_serial_generation) {
     references[i] = result.generated_tokens; requests.push_back(request);
   }
   auto backend = model.create_batch_backend(3);
+  backend->configure_prefix_cache(64 * 1024 * 1024);
   for (int repeat = 0; repeat < 2; ++repeat) {
     runtime::Scheduler scheduler(*backend, {3, 2, 8});
     scheduler.submit(requests[0]); scheduler.submit(requests[1]);
@@ -103,5 +104,23 @@ TEST(scheduler_cuda, mixed_requests_match_serial_generation) {
       EXPECT_EQ(result.inter_token_ms.size(), result.tokens.size() - 1);
     }
     EXPECT_EQ(backend->cache_stats().mapped_bytes, 0);
+    if (repeat) EXPECT_GE(backend->prefix_stats().hits, 2);
   }
+  const auto page_bytes = backend->prefix_stats().resident_bytes / 3;
+  ASSERT_GT(page_bytes, 0);
+  backend->configure_prefix_cache(page_bytes);
+  auto changed = requests[1]; changed.id = 99; ++changed.prompt[0];
+  runtime::GenerationOptions gold_options; gold_options.prompt_token_ids = changed.prompt;
+  gold_options.max_new_tokens = changed.max_new_tokens; gold_options.ignore_eos = true;
+  runtime::GenerationResult gold;
+  ASSERT_TRUE(bool(runtime::generate(model, "", gold_options, gold)));
+  runtime::Scheduler eviction(*backend, {1, 2, 8});
+  eviction.submit(requests[1]); eviction.submit(changed);
+  while (!eviction.empty()) eviction.step();
+  auto evicted_results = eviction.take_completed(); ASSERT_EQ(evicted_results.size(), 2);
+  EXPECT_EQ(evicted_results[0].tokens, references.at(1));
+  EXPECT_EQ(evicted_results[1].tokens, gold.generated_tokens);
+  EXPECT_GE(backend->prefix_stats().evictions, 1);
+  EXPECT_LE(backend->prefix_stats().resident_bytes, page_bytes);
+
 }

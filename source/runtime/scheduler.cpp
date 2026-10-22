@@ -1,6 +1,7 @@
 #include "runtime/scheduler.h"
 #include <algorithm>
 #include <chrono>
+#include <cmath>
 #include <stdexcept>
 
 namespace runtime {
@@ -28,6 +29,7 @@ Scheduler::~Scheduler() {
     if (state->admitted) { try { backend_.release(id); } catch (...) {} }
 }
 void Scheduler::submit(ServingRequest request) {
+  if (!std::isfinite(request.initial_queue_ms) || request.initial_queue_ms < 0) throw std::invalid_argument("Invalid initial queue delay");
   if (used_.count(request.id)) throw std::invalid_argument("Duplicate request id");
   if (pending_.size() >= options_.max_pending) throw std::runtime_error("Pending queue is full");
   if (request.prompt.empty() || request.max_new_tokens < 0 ||
@@ -39,6 +41,7 @@ void Scheduler::submit(ServingRequest request) {
     if (token < 0 || token >= backend_.vocab_size())
       throw std::invalid_argument("Invalid prompt token");
   auto state = std::make_unique<State>();
+  state->submitted -= std::chrono::duration_cast<Clock::duration>(std::chrono::duration<double, std::milli>(request.initial_queue_ms));
   state->result.id = request.id;
   state->request = std::move(request);
   auto id = state->request.id;
@@ -71,6 +74,11 @@ bool Scheduler::step() {
     if (!state.request.max_new_tokens) { finish(id, false); continue; }
     backend_.admit(id);
     state.admitted = true;
+    try {
+      state.position = backend_.reuse_prefix(id, state.request.prompt);
+      if (state.position < 0 || state.position >= int(state.request.prompt.size()))
+        throw std::runtime_error("Invalid reused prefix length");
+    } catch (...) { finish(id, true); throw; }
     state.result.queue_ms = ms(Clock::now(), state.submitted);
     pending_.pop_front();
     active_.push_back(id);

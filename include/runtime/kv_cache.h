@@ -3,6 +3,7 @@
 #include <cstdint>
 #include <memory>
 #include <utility>
+#include <vector>
 
 namespace runtime {
 // Device-readable view: a real dense cache OR independently allocated pages.
@@ -22,6 +23,18 @@ struct KVCacheStats {
   uint64_t table_updates = 0, table_clears = 0;
   uint64_t lifetime_allocations = 0, lifetime_frees = 0, lifetime_trimmed_bytes = 0;
 };
+// A lease on immutable complete physical pages. shared_ptr controls lifetime;
+// snapshots never include a writable partial page.
+class KVPrefixSnapshot {
+ public:
+  int tokens() const { return tokens_; }
+  uint64_t bytes() const { return bytes_; }
+ private:
+  friend class PagedKVCache;
+  int tokens_ = 0, layers_ = 0, kv_dim_ = 0, page_tokens_ = 0;
+  uint64_t bytes_ = 0;
+  std::vector<std::shared_ptr<void>> pages_;
+};
 class PagedKVCache {
  public:
   PagedKVCache(int layers, int context, int kv_dim, int page_tokens,
@@ -34,6 +47,8 @@ class PagedKVCache {
   std::pair<float*, float*> slot(int layer, int position) const;
   void release_request();
   void trim();
+  std::shared_ptr<const KVPrefixSnapshot> capture_prefix(int tokens) const;
+  void attach_prefix(const KVPrefixSnapshot& snapshot, int tokens = -1);
   void shuffle_free_pages(uint32_t seed);
   KVCacheView view() const;
   KVCacheStats stats() const;
