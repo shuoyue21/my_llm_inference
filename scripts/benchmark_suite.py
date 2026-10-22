@@ -15,6 +15,11 @@ def quantile(values,q):
 
 def summarize(samples,prompt_length):
  metrics={}
+ if samples and 'serving_mode' in samples[0]:
+  for name in ['load_ms','total_ms','output_tokens_per_second','requests_per_second','ttft_ms','ttft_p95_ms','ttft_p99_ms','latency_p50_ms','latency_p95_ms','latency_p99_ms','tpot_p50_ms','tpot_p95_ms','tpot_p99_ms','queue_p95_ms','gpu_load_memory_bytes']:
+   values=[sample[name] for sample in samples]
+   metrics[name]={'median':statistics.median(values),'min':min(values),'max':max(values)}
+  return metrics
  for name in ['load_ms','tokenization_ms','ttft_ms','prefill_ms','decode_ms','total_ms','decode_tokens_per_second','gpu_load_memory_bytes']:
   values=[s[name] for s in samples]
   metrics[name]={'median':statistics.median(values),'p95':quantile(values,.95),'min':min(values),'max':max(values)}
@@ -49,7 +54,11 @@ def main():
    binary=Path(model['binary']).resolve();library=Path(model['library']).resolve()
    assert digest(binary)==model['binary_sha256'] and digest(library)==model['library_sha256'],'Frozen executable changed'
    for path,info in model.get('dependencies',{}).items():assert digest(path)==info['sha256'],'Frozen dependency changed: '+path
-   for path,info in model['artifacts'].items():assert digest(path)==info['sha256'],'Model artifact changed: '+path
+   for path,info in model['artifacts'].items():
+    if 'mtime_ns' in info:
+     stat=Path(path).stat()
+     assert stat.st_size==info['bytes'] and stat.st_mtime_ns==info['mtime_ns'],'Model asset changed; verify before measuring: '+path
+    else:assert digest(path)==info['sha256'],'Model artifact changed: '+path
    env=dict(base_env,LD_LIBRARY_PATH=str(library.parent)+(':'+os.environ['LD_LIBRARY_PATH'] if os.environ.get('LD_LIBRARY_PATH') else ''))
    for prompt_length in workload['prompt_tokens']:
     for output_length in workload['generated_tokens']:
@@ -79,6 +88,12 @@ def main():
      if not reasons:
       samples=[json.loads(line) for line in stdout_path.read_text().splitlines() if line.strip()]
       if len(samples)!=workload['repeats']:reasons.append('wrong_sample_count')
+      elif samples and 'serving_mode' in samples[0]:
+       first=samples[0]
+       for sample in samples:
+        requests=sample['requests']
+        if sample['prompt_tokens']!=ids or len(requests)!=sample['request_count'] or any(len(r['generated_tokens'])!=output_length or len(r['decode_token_ms'])!=output_length-1 for r in requests):reasons.append('wrong_serving_token_counts')
+        if [r['generated_tokens'] for r in requests]!=[r['generated_tokens'] for r in first['requests']]:reasons.append('nondeterministic_serving_tokens')
       elif any(len(s['prompt_tokens'])!=prompt_length or len(s['generated_tokens'])!=output_length or len(s['decode_token_ms'])!=output_length-1 for s in samples):reasons.append('wrong_token_counts')
       elif any(s['prompt_tokens']!=ids or s['generated_tokens']!=samples[0]['generated_tokens'] for s in samples):reasons.append('nondeterministic_tokens')
      record={'accepted':not reasons,'rejection_reasons':reasons,'stage':a.stage,'source_revision':manifest['source_revision'],'source_digest':manifest['source_digest'],'gpu_uuid':monitor.uuid,'precision':manifest['precision'],'gpu_policy':monitor.policy,'model':model['name'],'prompt_tokens':prompt_length,'generated_tokens':output_length,'warmups':workload['warmups'],'repeats':workload['repeats'],'cpu_threads':workload['cpu_threads'],'harness':harness_provenance(),'command':command,'extra_args':a.extra_arg,'label':a.label,'environment':{k:env[k] for k in ['CUDA_VISIBLE_DEVICES','OPENBLAS_NUM_THREADS','OMP_NUM_THREADS','LD_LIBRARY_PATH']},'platform':platform.platform(),'cpu_affinity':sorted(os.sched_getaffinity(0)),'system_load_average':os.getloadavg(),'driver_version':__import__('pynvml').nvmlSystemGetDriverVersion(),'gate':gate,'before':latest,'monitor':{k:v for k,v in telemetry.items() if k!='samples'},'telemetry_file':str(trace_path),'samples':samples,'time_utc':datetime.datetime.now(datetime.timezone.utc).isoformat()}

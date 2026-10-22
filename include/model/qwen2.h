@@ -45,6 +45,8 @@ class Qwen2Model : public Model {
 
   op::EmbeddingOutput embedding(const std::vector<int>& tokens) const override;
 
+  std::unique_ptr<runtime::CudaBatchBackend> create_batch_backend(size_t max_rows) const override;
+
   base::Status prefill(const std::vector<int32_t>& tokens,
       const std::function<void(int, const tensor::Tensor&)>& on_logits, int& next) const override;
 

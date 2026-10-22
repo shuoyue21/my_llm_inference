@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Freeze each stage's executables and core shared library before collecting benchmarks."""
-import argparse,hashlib,json,shutil,subprocess,re
+import argparse,hashlib,json,shutil,subprocess,re,tarfile
 from pathlib import Path
 from gpu_policy import normalize_policy
 
@@ -20,12 +20,13 @@ def source_digest():
  return h.hexdigest()
 
 def main():
- p=argparse.ArgumentParser(description=__doc__);p.add_argument('--stage',required=True);p.add_argument('--registry',type=Path,default=Path('scripts/model_registry.json'));p.add_argument('--gpu-policy',type=Path);a=p.parse_args()
+ p=argparse.ArgumentParser(description=__doc__);p.add_argument('--stage',required=True);p.add_argument('--registry',type=Path,default=Path('scripts/model_registry.json'));p.add_argument('--gpu-policy',type=Path);p.add_argument('--model-evidence',type=Path,help='Reuse prior verified asset identities when assets are unchanged');a=p.parse_args()
  if not re.fullmatch(r'[A-Za-z0-9][A-Za-z0-9_.-]*',a.stage):p.error('Invalid stage name')
  record=Path('docs/performance/stages')/a.stage
  if (record/'manifest.json').exists():raise SystemExit(f'{record}/manifest.json already exists; choose a new machine-specific stage name')
  folder=Path('.artifacts/performance')/a.stage
  if folder.exists():raise SystemExit(f'{folder} already exists; stage snapshots are immutable')
+ prior_models={m['name']:m for m in json.loads(a.model_evidence.read_text())['models']} if a.model_evidence else {}
  registry=json.loads(a.registry.read_text());manifest={'stage':a.stage,'source_revision':subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip(),'source_digest':source_digest(),'precision':registry['precision'],'gpu_policy':normalize_policy(json.loads(a.gpu_policy.read_text()) if a.gpu_policy else None),'models':[],'workloads':registry['workloads']}
  for m in registry['models']:
   out=folder/m['name'];(out/'bin').mkdir(parents=True);(out/'lib').mkdir()
@@ -44,9 +45,22 @@ def main():
   item['dependencies']=dependencies
   item['artifacts']={}
   for file in [Path(m['checkpoint']),Path(m['tokenizer']),Path(m['checkpoint']+'.json')]:
-   if file.exists():item['artifacts'][str(file)]={'sha256':digest(file),'bytes':file.stat().st_size}
+   if file.exists():
+    stat=file.stat();prior=prior_models.get(m['name'],{}).get('artifacts',{}).get(str(file))
+    if a.model_evidence:
+     if not prior or prior['bytes']!=stat.st_size:raise RuntimeError('Asset differs from prior evidence: '+str(file))
+     identity=dict(prior,verification_reused_from=str(a.model_evidence))
+    else:identity={'sha256':digest(file),'bytes':stat.st_size}
+    item['artifacts'][str(file)]=dict(identity,mtime_ns=stat.st_mtime_ns)
+
   manifest['models'].append(item)
- folder.mkdir(parents=True,exist_ok=True);(folder/'manifest.json').write_text(json.dumps(manifest,indent=2)+'\n')
+ folder.mkdir(parents=True,exist_ok=True)
+ with tarfile.open(folder/'source.tar.gz','w:gz') as archive:
+  for source_root in ['include','source','demo','test','scripts']:
+   for file in sorted(Path(source_root).rglob('*')):
+    if file.is_file() and '__pycache__' not in file.parts:archive.add(file,arcname=str(file),recursive=False)
+  archive.add('CMakeLists.txt');archive.add('CMakePresets.json')
+ (folder/'manifest.json').write_text(json.dumps(manifest,indent=2)+'\n')
  record=Path('docs/performance/stages')/a.stage;record.mkdir(parents=True,exist_ok=True);(record/'manifest.json').write_text(json.dumps(manifest,indent=2)+'\n')
  print(json.dumps({'stage':a.stage,'revision':manifest['source_revision'],'source_digest':manifest['source_digest'],'snapshot':str(folder),'models':len(manifest['models'])}))
 if __name__=='__main__':main()

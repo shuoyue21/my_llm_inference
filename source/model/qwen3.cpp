@@ -11,6 +11,7 @@
 #include "../op/kernels/cuda/rope_kernel.cuh"
 #include "base/tick.h"
 #include "runtime/prefill_weights.h"
+#include "runtime/cuda_batch.h"
 #include "../op/kernels/cuda/decode_kernels.cuh"
 #include <stdexcept>
 namespace model {
@@ -149,6 +150,15 @@ base::Status Qwen3Model::init(base::DeviceType device_type) {
 
   sampler_ = std::make_unique<sampler::ArgmaxSampler>(device_type_);
   return error::Success();
+}
+
+std::unique_ptr<runtime::CudaBatchBackend> Qwen3Model::create_batch_backend(size_t max_rows) const {
+  if (device_type_ != base::DeviceType::kDeviceCUDA || is_quant_model_)
+    throw std::invalid_argument("Continuous batching requires CUDA FP32");
+  return std::make_unique<runtime::CudaBatchBackend>(
+      runtime::collect_prefill_weights(*qwen_layers_, *config_), cuda_config_,
+      get_buffer(ModelBufferType::kSinCache), get_buffer(ModelBufferType::kCosCache),
+      max_rows, kv_page_tokens_, [this](int token) { return is_sentence_ending(token); });
 }
 
 base::Status Qwen3Model::prefill(const std::vector<int32_t>& tokens,

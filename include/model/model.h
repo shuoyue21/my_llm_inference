@@ -13,11 +13,13 @@
 #include "tensor/tensor.h"
 #include "runtime/decode.h"
 
-namespace runtime { class CudaPrefill; }
+namespace runtime { class CudaPrefill; class CudaBatchBackend; }
 namespace model {
 class Model {
  public:
   virtual ~Model() = default;
+  // The model must outlive its serving backend (tokenizer EOS predicate).
+  virtual std::unique_ptr<runtime::CudaBatchBackend> create_batch_backend(size_t max_rows) const;
   int32_t context_length() const { return config_->seq_len_; }
   int32_t vocab_size() const { return config_->vocab_size_; }
   base::DeviceType device_type() const { return device_type_; }

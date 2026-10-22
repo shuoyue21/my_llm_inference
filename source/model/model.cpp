@@ -1,4 +1,5 @@
 #include "model/model.h"
+#include "runtime/cuda_batch.h"
 #include <fcntl.h>
 #include <sys/mman.h>
 #include <sys/stat.h>
@@ -19,6 +20,10 @@ Model::Model(base::TokenizerType tokenizer_type, base::ModelType model_type, std
       token_path_(std::move(token_path)),
       model_path_(std::move(model_path)),
       is_quant_model_(is_quant_model) {}
+
+std::unique_ptr<runtime::CudaBatchBackend> Model::create_batch_backend(size_t) const {
+  throw std::runtime_error("This model does not provide a CUDA batch backend");
+}
 
 base::Status Model::prefill(const std::vector<int32_t>&,
     const std::function<void(int, const tensor::Tensor&)>&, int&) const {

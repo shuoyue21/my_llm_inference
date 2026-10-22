@@ -45,6 +45,7 @@ def main():
     p.add_argument('--dependency-cache', type=Path, default=Path('build/_deps'))
     p.add_argument('--offline', action='store_true', help='Require pre-populated dependency source directories')
     p.add_argument('--dry-run', action='store_true')
+    p.add_argument('--build-only', action='store_true', help='Reuse configured directories for incremental builds (configure first after adding sources)')
     a = p.parse_args()
     if any(variant not in VARIANTS for variant in a.variants):
         p.error('Unknown variant; choose from ' + ', '.join(VARIANTS))
@@ -63,7 +64,7 @@ def main():
     for plan in plans:
         log = Path('/tmp') / ('my_llm_build_' + plan['variant'] + '.log')
         with log.open('w') as output:
-            for command in [plan['configure'], plan['build']]:
+            for command in ([plan['build']] if a.build_only else [plan['configure'], plan['build']]):
                 subprocess.run(command, stdout=output, stderr=subprocess.STDOUT, check=True)
         print(plan['variant'] + ' built; ' + str(log), flush=True)
 

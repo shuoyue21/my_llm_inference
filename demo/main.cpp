@@ -1,4 +1,5 @@
 #include "runtime/generation.h"
+#include "runtime/serving_benchmark.h"
 #include "model/llama3.h"
 #if defined(QWEN2_SUPPORT)
 #include "model/qwen2.h"
@@ -8,6 +9,7 @@
 #include <cuda_runtime_api.h>
 #include <algorithm>
 #include <chrono>
+#include <cmath>
 #include <fstream>
 #include <iomanip>
 #include <iostream>
@@ -51,6 +53,7 @@ void usage() {
                "       [--max-new-tokens N] [--json] [--quant] [--dump-logits FILE]\n"
                "       [--prompt-ids FILE] [--ignore-eos] [--warmup N] [--repeat N] [--prefill auto|batched|reference]\n"
                "       [--decode auto|optimized|reference] [--cuda-graph on|off] [--fusion on|off] [--kv-cache auto|paged|contiguous] [--kv-page-tokens N]\n"
+               "       [--serving serial|continuous] [--concurrency N] [--requests N] [--token-budget N] [--arrival-ms N]\n"
                "Greedy decoding. JSON reports generated text, token IDs and separate TTFT/decode metrics.\n";
 }
 }
@@ -67,11 +70,29 @@ int main(int argc, char** argv) {
     std::string kv_cache_mode = "auto";
     int kv_page_tokens = 16;
     runtime::GenerationOptions options;
+    runtime::ServingBenchmarkOptions serving;
+    bool serving_enabled = false;
     for (int i = 3; i < argc; ++i) {
       std::string flag = argv[i];
       if (flag == "--json") { json = true; continue; }
       if (flag == "--quant") { quant = true; continue; }
       if (flag == "--ignore-eos") { options.ignore_eos = true; continue; }
+      if (flag == "--serving" || flag == "--concurrency" || flag == "--requests" || flag == "--token-budget" || flag == "--arrival-ms") {
+        if (++i == argc) throw std::invalid_argument("Missing serving option value");
+        std::string value = argv[i]; size_t end = 0;
+        if (flag == "--serving") { serving.mode = value; serving_enabled = true; }
+        else if (flag == "--arrival-ms") {
+          serving.arrival_interval_ms = std::stod(value, &end);
+          if (end != value.size() || !std::isfinite(serving.arrival_interval_ms)) throw std::invalid_argument("Invalid arrival interval");
+        } else {
+          int number = std::stoi(value, &end);
+          if (end != value.size()) throw std::invalid_argument("Invalid serving integer");
+          if (flag == "--concurrency") serving.concurrency = number;
+          if (flag == "--requests") serving.requests = number;
+          if (flag == "--token-budget") serving.token_budget = number;
+        }
+        continue;
+      }
       if (flag != "--prompt" && flag != "--device" && flag != "--max-new-tokens" && flag != "--dump-logits" && flag != "--prompt-ids" && flag != "--repeat" && flag != "--warmup" && flag != "--prefill" && flag != "--decode" && flag != "--cuda-graph" && flag != "--fusion" && flag != "--kv-cache" && flag != "--kv-page-tokens")
         throw std::invalid_argument("Unknown option: " + flag);
       if (++i == argc) throw std::invalid_argument("Missing value for " + flag);
@@ -138,6 +159,13 @@ int main(int argc, char** argv) {
       if (error != cudaSuccess) throw std::runtime_error(cudaGetErrorString(error));
     }
     double load_ms = std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - load_start).count();
+    if (serving_enabled) {
+      if (device != "cuda") throw std::invalid_argument("Serving benchmark requires CUDA");
+      cudaMemGetInfo(&gpu_free_after, &gpu_total);
+      runtime::benchmark_serving(*model, prompt, options, serving, warmups, repeats, load_ms,
+          gpu_free_before > gpu_free_after ? gpu_free_before - gpu_free_after : 0);
+      return 0;
+    }
     std::ofstream dump;
     if (!dump_path.empty()) {
       dump.open(dump_path, std::ios::binary);
