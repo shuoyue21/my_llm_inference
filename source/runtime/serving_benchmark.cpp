@@ -6,6 +6,7 @@
 #include <iostream>
 #include <thread>
 #include <stdexcept>
+#include <fstream>
 namespace runtime {
 namespace {
 using Clock = std::chrono::steady_clock;
@@ -31,8 +32,26 @@ void benchmark_serving(const model::Model& model, const std::string& prompt,
       options.token_budget > 1024 || options.arrival_interval_ms < 0)
     throw std::invalid_argument("Invalid serving benchmark options");
   auto ids = generation.prompt_token_ids.empty() ? model.encode(prompt) : generation.prompt_token_ids;
+  size_t backend_free_before=0, backend_free_after=0, backend_total=0;
+  cudaMemGetInfo(&backend_free_before,&backend_total);
+  auto backend_start=Clock::now();
   std::unique_ptr<CudaBatchBackend> backend;
-  if (options.mode == "continuous") backend = model.create_batch_backend(options.token_budget);
+  if (options.mode == "continuous") backend = model.create_batch_backend(options.token_budget, options.precision);
+  cudaDeviceSynchronize();
+  cudaMemGetInfo(&backend_free_after,&backend_total);
+  const double backend_setup_ms=since(backend_start);
+  load_memory += backend_free_before > backend_free_after ? backend_free_before-backend_free_after : 0;
+  if (backend) backend->configure_attention(options.attention);
+  std::ofstream dump;
+  if (!options.logits_path.empty()) {
+    if (!backend || warmups || repeats != 1 || options.requests != 1) throw std::invalid_argument("Serving logits dump requires one request/repeat and no warmups");
+    dump.open(options.logits_path, std::ios::binary);
+    if (!dump) throw std::runtime_error("Cannot open serving logits dump");
+    backend->set_logits_callback([&](RequestId, int, const std::vector<float>& values) {
+      dump.write(reinterpret_cast<const char*>(values.data()), values.size()*sizeof(float));
+      if (!dump) throw std::runtime_error("Serving logits dump failed");
+    });
+  }
   if (backend) backend->configure_prefix_cache(options.prefix_cache_bytes);
   for (int iteration = -warmups; iteration < repeats; ++iteration) {
     auto prefix_before = backend ? backend->prefix_stats() : PrefixCacheStats{};
@@ -78,14 +97,14 @@ void benchmark_serving(const model::Model& model, const std::string& prompt,
       tpot.insert(tpot.end(), result.inter_token_ms.begin(), result.inter_token_ms.end());
     }
     auto prefix_after = backend ? backend->prefix_stats() : PrefixCacheStats{};
-    std::cout << "{\"prefix_cache_bytes\":" << prefix_after.resident_bytes
+    std::cout << "{\"attention\":\"" << options.attention << "\",\"attention_workspace_bytes\":" << (backend ? backend->attention_workspace_bytes() : 0) << ",\"precision\":\"" << options.precision << "\",\"linear_weight_bytes\":" << (backend ? backend->linear_weight_bytes() : 0) << ",\"prefix_cache_bytes\":" << prefix_after.resident_bytes
         << ",\"prefix_lookups\":" << prefix_after.lookups - prefix_before.lookups
         << ",\"prefix_hits\":" << prefix_after.hits - prefix_before.hits
         << ",\"prefix_reused_tokens\":" << prefix_after.reused_tokens - prefix_before.reused_tokens
         << ",\"prefix_evictions\":" << prefix_after.evictions - prefix_before.evictions << ',';
     std::cout << std::setprecision(12) << "\"serving_mode\":\"" << options.mode << "\",\"concurrency\":" << options.concurrency
         << ",\"request_count\":" << options.requests << ",\"token_budget\":" << options.token_budget
-        << ",\"arrival_interval_ms\":" << options.arrival_interval_ms << ",\"load_ms\":" << load_ms
+        << ",\"arrival_interval_ms\":" << options.arrival_interval_ms << ",\"backend_setup_ms\":" << backend_setup_ms << ",\"load_ms\":" << load_ms + backend_setup_ms
         << ",\"gpu_load_memory_bytes\":" << load_memory << ",\"total_ms\":" << total
         << ",\"output_tokens_per_second\":" << generated * 1000.0 / total
         << ",\"requests_per_second\":" << completed.size() * 1000.0 / total

@@ -81,6 +81,39 @@ __global__ void attention_device_position(const float* q,runtime::KVCacheView ca
   for(int t=tid;t<=pos;t+=blockDim.x)score[t]/=shared;__syncthreads();
   for(int i=tid;i<hs;i+=blockDim.x){float result=0;for(int t=0;t<=pos;++t)result+=score[t]*kv_value(cache,layer,t)[kh+i];out[head*hs+i]=result;}
 }
+__global__ void prepare_batch_cache(float* query,const float* key,const float* value,
+    const runtime::KVCacheView* caches,const int* positions,int layer,
+    const float* sine,const float* cosine,int qw,int kw,int hs,bool split) {
+  int row=blockIdx.x,pair=blockIdx.y*blockDim.x+threadIdx.x;
+  if(pair>=qw/2)return;
+  int within=pair%(hs/2),left=split?(pair/(hs/2))*hs+within:pair*2;
+  int right=left+(split?hs/2:1),pos=positions[row];
+  float sn=sine[pos*hs+within*2],cs=cosine[pos*hs+within*2];
+  rotate(query+size_t(row)*qw,left,right,sn,cs);
+  if(pair<kw/2){
+    const float* k=key+size_t(row)*kw;const float* v=value+size_t(row)*kw;
+    auto cache=caches[row];float* keys=kv_key(cache,layer,pos);float* values=kv_value(cache,layer,pos);
+    float a=k[left],b=k[right];keys[left]=a*cs-b*sn;keys[right]=a*sn+b*cs;
+    values[left]=v[left];values[right]=v[right];
+  }
+}
+__global__ void attention_batch_positions(const float* q,const runtime::KVCacheView* caches,
+    const int* positions,int layer,float* scores,float* out,int heads,int kv_heads,int hs) {
+  int row=blockIdx.x,head=blockIdx.y,tid=threadIdx.x,pos=positions[row];
+  auto cache=caches[row];int context=cache.context,kh=(head/(heads/kv_heads))*hs;
+  extern __shared__ float shared_q[];
+  int padded=(hs+3)/4*4;
+  for(int i=tid;i<padded;i+=blockDim.x)shared_q[i]=i<hs?q[(size_t(row)*heads+head)*hs+i]:0.f;
+  __syncthreads();
+  float* score=scores+(size_t(row)*heads+head)*context;float maximum=-FLT_MAX,scale=1.f/sqrtf(float(hs));
+  for(int t=tid;t<=pos;t+=blockDim.x){const float* k=kv_key(cache,layer,t)+kh;float dot=0;for(int i=0;i<hs;++i)dot+=k[i]*shared_q[i];score[t]=dot*scale;maximum=fmaxf(maximum,score[t]);}
+  using Reduce=cub::BlockReduce<float,256>;__shared__ Reduce::TempStorage storage;__shared__ float shared;
+  maximum=Reduce(storage).Reduce(maximum,FloatMaximum{});if(tid==0)shared=maximum;__syncthreads();maximum=shared;__syncthreads();
+  float sum=0;for(int t=tid;t<=pos;t+=blockDim.x){score[t]=expf(score[t]-maximum);sum+=score[t];}
+  sum=Reduce(storage).Sum(sum);if(tid==0)shared=sum;__syncthreads();
+  for(int t=tid;t<=pos;t+=blockDim.x)score[t]/=shared;__syncthreads();
+  for(int i=tid;i<hs;i+=blockDim.x){float result=0;for(int t=0;t<=pos;++t)result+=score[t]*kv_value(cache,layer,t)[kh+i];out[(size_t(row)*heads+head)*hs+i]=result;}
+}
 __global__ void sample_and_advance(const float* input,int n,int* token,int* position) {
   using Pair=cub::KeyValuePair<int,float>;using Reduce=cub::BlockReduce<Pair,256>;
   __shared__ Reduce::TempStorage storage;Pair best(INT_MAX,-FLT_MAX);
@@ -100,4 +133,12 @@ void decode_sample(const float* logits,int n,int* token,int* position,cudaStream
 void decode_store_cache(const float* k,const float* v,runtime::KVCacheView cache,int layer,const int* pos,cudaStream_t stream){store_device_position<<<(cache.kv_dim+255)/256,256,0,stream>>>(k,v,cache,layer,pos,cache.kv_dim);}
 void decode_prepare_cache_qkv(float* qkv,const float* bias,const float* qn,const float* kn,runtime::KVCacheView cache,int layer,const int* pos,const float* s,const float* c,int heads,int kv_heads,int hs,float epsilon,bool split,cudaStream_t stream){prepare_qkv<<<heads,128,0,stream>>>(qkv,bias,qn,kn,cache,layer,pos,s,c,heads,kv_heads,hs,epsilon,split);}
 void decode_cache_attention(const float* q,runtime::KVCacheView cache,int layer,float* scores,float* out,const int* pos,int host_pos,int heads,int kv_heads,int hs,cudaStream_t stream){attention_device_position<<<heads,256,((hs+3)/4*4)*sizeof(float),stream>>>(q,cache,layer,scores,out,pos,host_pos,cache.context,heads,kv_heads,hs);}
+void batch_prepare_cache(float* q,const float* k,const float* v,const runtime::KVCacheView* caches,
+    const int* positions,int layer,const float* sine,const float* cosine,int rows,int qw,int kw,int hs,bool split,cudaStream_t stream){
+  prepare_batch_cache<<<dim3(rows,(qw/2+127)/128),128,0,stream>>>(q,k,v,caches,positions,layer,sine,cosine,qw,kw,hs,split);
+}
+void batch_reference_attention(const float* q,const runtime::KVCacheView* caches,const int* positions,
+    int layer,float* scores,float* out,int rows,int heads,int kv_heads,int hs,cudaStream_t stream){
+  attention_batch_positions<<<dim3(rows,heads),256,((hs+3)/4*4)*sizeof(float),stream>>>(q,caches,positions,layer,scores,out,heads,kv_heads,hs);
+}
 }  // namespace kernel

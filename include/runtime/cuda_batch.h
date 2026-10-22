@@ -11,7 +11,7 @@ class CudaBatchBackend : public BatchBackend {
  public:
   CudaBatchBackend(PrefillWeights weights, std::shared_ptr<kernel::CudaConfig> config,
                    tensor::Tensor sine, tensor::Tensor cosine, size_t max_rows,
-                   int page_tokens, std::function<bool(int)> is_eos);
+                   int page_tokens, std::function<bool(int)> is_eos, const std::string& precision = "fp32");
   ~CudaBatchBackend();
   int context_length() const override;
   int vocab_size() const override;
@@ -22,6 +22,10 @@ class CudaBatchBackend : public BatchBackend {
   void configure_prefix_cache(uint64_t max_bytes);
   int reuse_prefix(RequestId id, const std::vector<int32_t>& tokens) override;
   PrefixCacheStats prefix_stats() const;
+  uint64_t linear_weight_bytes() const;
+  void configure_attention(const std::string& mode);
+  uint64_t attention_workspace_bytes() const;
+  void set_logits_callback(std::function<void(RequestId, int, const std::vector<float>&)> callback);
  private:
   struct Impl;
   std::unique_ptr<Impl> impl_;

@@ -1,6 +1,20 @@
 # 换机器运行与后续开发交接
 
-最后整理：2026-10-16。工作分支：`codex/local-staged-inference-20261015`。仓库：<https://github.com/shuoyue21/my_llm_inference>。
+最后整理：2026-10-22。工作分支：`codex/local-staged-inference-20261015`。仓库：<https://github.com/shuoyue21/my_llm_inference>。
+
+## 后续扩展（2026-10-22）
+
+第 4–7 项源码已接入：请求隔离/动态 token budget 合批、物理页共享前缀缓存、FP16/BF16/W8A16/W4A16、32-token online softmax Attention。接口与复现见 [SERVING.md](SERVING.md)。四模型请求隔离、前缀租约/LRU、生成对照和长序列 FP64 Attention 对照通过；修复版精度探针也已完成，并独立比对原生 FP32。
+
+本轮正式矩阵已完成：432 个接受场景、2160 组正式采样、11340 个正式请求。结果见 [PERFORMANCE_EXTENSIONS.md](PERFORMANCE_EXTENSIONS.md)，复现入口见 [SERVING.md](SERVING.md)。本地队列状态为 `docs/performance/development/runtime_pipeline.json`（complete），验证记录为 `runtime_validation.json`。最终阶段为 `S{4,5,6,7}-Forward-20261022-runtime`，使用统一修复版程序与独立运行开关配对；NVML、输入、输出、预热及重复数均已核对。新数据汇总与导出为 `docs/performance/extensions/audit.json` 和 `metrics.csv`，不覆盖 S0–S3 的旧审计/CSV。
+
+并发 8 有 33/36 场景吞吐提高，最高 5.81 倍。重复前缀受控负载最高 TTFT 加速约 43.61 倍。低精度显存与速度及精度损失同时记录；online Attention 虽消除 scores 工作区，但已测长序列吞吐回退，默认保留 reference。
+
+初版冗余 prefill 分类及逐行 GPU 提交的退化数据、被监控拒绝的构建干扰尝试均保留，不混入最终矩阵。NVML 记录中曾出现 nvlink 计算客户端，因此最终采集完全在 CUDA 构建结束后串行执行。每个冻结目录的 `source.tar.gz` 保存真实推理源码；冻结时的 base Git revision 本身不包含当时未提交变更，源码摘要与归档保持原样。
+
+S6 初次 CPU 权重上传候选因非拥有型 tensor clone 失败，保留不采用。修复版首次精度探针因带点模型名文件命名冲突不采用；选定精度数据仅为 `docs/performance/development/S6-Forward-20261022-runtime/quality-fixed/quality.json`。固定小文本探针中 W4 困惑度为 FP32 的约 1.26–3.68 倍，不能宣称无损量化。
+
+所有中间数据继续保持忽略且不跟踪；没有重复校验未变化的多 GB 模型，没有终止其他人的 GPU 任务。原 S0–S3 的数据和负结果保持不变。以下 2026-10-15 状态是已完成前三项的历史记录。
 
 ## 本机最终状态（2026-10-15）
 

@@ -3,6 +3,9 @@
 namespace runtime {
 struct ServingBenchmarkOptions {
   std::string mode = "continuous";
+  std::string precision = "fp32";
+  std::string attention = "reference";
+  std::string logits_path;
   int concurrency = 4;
   int requests = 32;
   int token_budget = 128;

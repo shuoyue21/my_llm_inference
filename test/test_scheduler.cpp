@@ -93,6 +93,7 @@ TEST(scheduler_cuda, mixed_requests_match_serial_generation) {
   }
   auto backend = model.create_batch_backend(3);
   backend->configure_prefix_cache(64 * 1024 * 1024);
+  if (const char* mode = std::getenv("LLAMA_TEST_ATTENTION")) backend->configure_attention(mode);
   for (int repeat = 0; repeat < 2; ++repeat) {
     runtime::Scheduler scheduler(*backend, {3, 2, 8});
     scheduler.submit(requests[0]); scheduler.submit(requests[1]);

@@ -54,6 +54,8 @@ void usage() {
                "       [--prompt-ids FILE] [--ignore-eos] [--warmup N] [--repeat N] [--prefill auto|batched|reference]\n"
                "       [--decode auto|optimized|reference] [--cuda-graph on|off] [--fusion on|off] [--kv-cache auto|paged|contiguous] [--kv-page-tokens N]\n"
                "       [--serving serial|continuous] [--concurrency N] [--requests N] [--token-budget N] [--arrival-ms N]\n"
+               "       [--prefix-cache-mib N] [--precision fp32|fp16|bf16|w8a16|w4a16]\n"
+               "       [--attention reference|online]\n"
                "Greedy decoding. JSON reports generated text, token IDs and separate TTFT/decode metrics.\n";
 }
 }
@@ -71,12 +73,21 @@ int main(int argc, char** argv) {
     int kv_page_tokens = 16;
     runtime::GenerationOptions options;
     runtime::ServingBenchmarkOptions serving;
-    bool serving_enabled = false;
+    bool serving_enabled = false, serving_host_weights = false, native_switch_selected = false;
     for (int i = 3; i < argc; ++i) {
       std::string flag = argv[i];
+      if (flag == "--prefill" || flag == "--decode" || flag == "--cuda-graph" || flag == "--fusion") native_switch_selected = true;
       if (flag == "--json") { json = true; continue; }
       if (flag == "--quant") { quant = true; continue; }
       if (flag == "--ignore-eos") { options.ignore_eos = true; continue; }
+      if (flag == "--attention") {
+        if (++i == argc) throw std::invalid_argument("Missing attention mode");
+        serving.attention = argv[i]; continue;
+      }
+      if (flag == "--precision") {
+        if (++i == argc) throw std::invalid_argument("Missing precision");
+        serving.precision = argv[i]; serving_host_weights = true; continue;
+      }
       if (flag == "--serving" || flag == "--concurrency" || flag == "--requests" || flag == "--token-budget" || flag == "--prefix-cache-mib" || flag == "--arrival-ms") {
         if (++i == argc) throw std::invalid_argument("Missing serving option value");
         std::string value = argv[i]; size_t end = 0;
@@ -151,9 +162,14 @@ int main(int argc, char** argv) {
 #else
     model = std::make_unique<model::LLama2Model>(base::TokenizerType::kEncodeSpe, argv[2], argv[1], quant);
 #endif
-    auto status = model->configure_kv_cache(kv_cache_mode, kv_page_tokens);
+    if (serving_enabled && serving.mode == "continuous") {
+      if (native_switch_selected) throw std::invalid_argument("prefill/decode/Graph/fusion switches apply to native or serial inference");
+      if (kv_cache_mode == "contiguous") throw std::invalid_argument("Continuous serving requires paged KV");
+    }
+    auto status = model->configure_kv_cache(serving_host_weights ? "auto" : kv_cache_mode, kv_page_tokens);
     if (!status) throw std::runtime_error(status.get_err_msg());
-    status = model->init(device == "cpu" ? base::DeviceType::kDeviceCPU : base::DeviceType::kDeviceCUDA);
+    if (serving_host_weights && (!serving_enabled || serving.mode != "continuous")) throw std::invalid_argument("Precision selection requires continuous serving");
+    status = model->init(device == "cpu" || serving_host_weights ? base::DeviceType::kDeviceCPU : base::DeviceType::kDeviceCUDA);
     if (!status) throw std::runtime_error(status.get_err_msg());
     if (device == "cuda") {
       auto error = cudaDeviceSynchronize();
@@ -163,6 +179,7 @@ int main(int argc, char** argv) {
     if (serving_enabled) {
       if (device != "cuda") throw std::invalid_argument("Serving benchmark requires CUDA");
       cudaMemGetInfo(&gpu_free_after, &gpu_total);
+      serving.logits_path = dump_path;
       runtime::benchmark_serving(*model, prompt, options, serving, warmups, repeats, load_ms,
           gpu_free_before > gpu_free_after ? gpu_free_before - gpu_free_after : 0);
       return 0;

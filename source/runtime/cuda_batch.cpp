@@ -1,10 +1,12 @@
 #include "runtime/cuda_batch.h"
+#include "runtime/precision_linear.h"
 #include <cublas_v2.h>
 #include <stdexcept>
 #include <unordered_map>
 #include <algorithm>
 #include "../op/kernels/cuda/prefill_kernels.cuh"
 #include "../op/kernels/cuda/decode_kernels.cuh"
+#include "../op/kernels/cuda/online_attention.cuh"
 namespace runtime {
 namespace {
 void check(cudaError_t status) {
@@ -28,9 +30,14 @@ struct CudaBatchBackend::Impl {
   tensor::Tensor sine, cosine;
   size_t max_rows;
   int page_tokens;
+  bool online_attention = false;
+  Buffer cache_views;
   std::function<bool(int)> is_eos;
   cublasHandle_t blas = nullptr;
-  Buffer ids, positions, x, z, q, k, v, attention, y, gate, up, scores, logits, sampled;
+  Buffer ids, positions, x, z, q, k, v, attention, y, gate, up, scores, logits, sampled, activation, dequantization, output_indices;
+  std::unordered_map<const float*, std::unique_ptr<PrecisionLinear>> linears;
+  uint64_t weight_bytes = 0;
+  std::function<void(RequestId, int, const std::vector<float>&)> on_logits;
   struct Request {
     std::unique_ptr<PagedKVCache> cache;
     int position = 0;
@@ -66,20 +73,55 @@ struct CudaBatchBackend::Impl {
   std::vector<std::unique_ptr<PagedKVCache>> idle_caches;
   Impl(PrefillWeights weights, std::shared_ptr<kernel::CudaConfig> cuda,
        tensor::Tensor sin, tensor::Tensor cos, size_t rows, int pages,
-       std::function<bool(int)> eos)
+       std::function<bool(int)> eos, const std::string& precision)
       : w(std::move(weights)), config(std::move(cuda)), sine(std::move(sin)),
         cosine(std::move(cos)), max_rows(rows), page_tokens(pages), is_eos(std::move(eos)) {
     if (!max_rows || max_rows > 1024 || !config || page_tokens <= 0 || page_tokens > w.context)
       throw std::invalid_argument("Invalid batch backend dimensions");
+    const bool host_source = w.embedding.device_type() == base::DeviceType::kDeviceCPU;
+    auto upload = [&](tensor::Tensor& tensor) {
+      if (!tensor.is_empty() && tensor.device_type() == base::DeviceType::kDeviceCPU) {
+        tensor::Tensor uploaded(base::DataType::kDataTypeFp32, tensor.dims(), true,
+            base::CUDADeviceAllocatorFactory::get_instance());
+        check(cudaMemcpyAsync(uploaded.ptr<float>(), tensor.ptr<float>(), tensor.byte_size(),
+            cudaMemcpyHostToDevice, config->stream));
+        tensor = std::move(uploaded);
+      }
+    };
+    size_t largest_matrix = 0;
+    auto prepare = [&](Projection& projection) {
+      largest_matrix = std::max(largest_matrix, projection.weight.size());
+      if (host_source || precision != "fp32") {
+        auto key = projection.weight.ptr<float>();
+        if (!linears.count(key)) {
+          auto packed = std::make_unique<PrecisionLinear>(projection.weight, precision, config->stream);
+          weight_bytes += packed->bytes(); linears.emplace(key, std::move(packed));
+        }
+      } else weight_bytes += projection.weight.byte_size();
+      upload(projection.bias);
+    };
+    if (host_source || precision != "fp32") {
+      auto packed = std::make_unique<PrecisionLinear>(w.embedding, precision, config->stream);
+      weight_bytes += packed->bytes(); linears.emplace(w.embedding.ptr<float>(), std::move(packed));
+    }
+    upload(w.final_norm); upload(sine); upload(cosine);
+    prepare(w.classifier);
+    for (auto& block : w.blocks) {
+      upload(block.attention_norm); upload(block.ffn_norm); upload(block.query_norm); upload(block.key_norm);
+      for (auto p : {&block.query, &block.key, &block.value, &block.output, &block.gate, &block.up, &block.down}) prepare(*p);
+    }
+    if (precision == "w8a16" || precision == "w4a16") dequantization.allocate(largest_matrix * 2);
+    activation.allocate(rows * size_t(std::max({w.hidden, w.intermediate, w.attention})) * 2);
     const size_t kv = w.kv_heads * w.head_size;
+    cache_views.allocate(rows * sizeof(KVCacheView));
     ids.allocate(rows * sizeof(int)); positions.allocate(rows * sizeof(int));
-    sampled.allocate(rows * sizeof(int));
+    sampled.allocate(rows * sizeof(int)); output_indices.allocate(rows * sizeof(int));
     x.allocate(rows * w.hidden * sizeof(float)); z.allocate(rows * w.hidden * sizeof(float));
     q.allocate(rows * w.attention * sizeof(float));
     k.allocate(rows * kv * sizeof(float)); v.allocate(rows * kv * sizeof(float));
     attention.allocate(rows * w.attention * sizeof(float)); y.allocate(rows * w.hidden * sizeof(float));
     gate.allocate(rows * w.intermediate * sizeof(float)); up.allocate(rows * w.intermediate * sizeof(float));
-    scores.allocate(rows * w.heads * w.context * sizeof(float));
+    // The reference score workspace is allocated only when selected.
     logits.allocate(rows * w.vocab * sizeof(float));
     blas_check(cublasCreate(&blas));
     try {
@@ -94,15 +136,17 @@ struct CudaBatchBackend::Impl {
   void linear(const float* input, const Projection& p, float* output, int rows) {
     int n = p.weight.get_dim(0), width = p.weight.get_dim(1);
     float alpha = 1.f, beta = 0.f;
-    blas_check(cublasSgemm(blas, CUBLAS_OP_T, CUBLAS_OP_N, n, rows, width,
+    auto packed = linears.find(p.weight.ptr<float>());
+    if (packed != linears.end()) packed->second->run(input, output, rows, activation.data, dequantization.data, blas, config->stream);
+    else blas_check(cublasSgemm(blas, CUBLAS_OP_T, CUBLAS_OP_N, n, rows, width,
         &alpha, p.weight.ptr<float>(), width, input, width, &beta, output, n));
     if (!p.bias.is_empty()) kernel::prefill_bias(output, p.bias.ptr<float>(), rows, n, config->stream);
   }
 };
 CudaBatchBackend::CudaBatchBackend(PrefillWeights w, std::shared_ptr<kernel::CudaConfig> c,
-    tensor::Tensor sin, tensor::Tensor cos, size_t rows, int pages, std::function<bool(int)> eos)
+    tensor::Tensor sin, tensor::Tensor cos, size_t rows, int pages, std::function<bool(int)> eos, const std::string& precision)
     : impl_(std::make_unique<Impl>(std::move(w), std::move(c), std::move(sin),
-                                  std::move(cos), rows, pages, std::move(eos))) {}
+                                  std::move(cos), rows, pages, std::move(eos), precision)) {}
 CudaBatchBackend::~CudaBatchBackend() = default;
 int CudaBatchBackend::context_length() const { return impl_->w.context; }
 int CudaBatchBackend::vocab_size() const { return impl_->w.vocab; }
@@ -138,11 +182,17 @@ std::vector<TokenOutput> CudaBatchBackend::execute(const std::vector<ScheduledTo
     ids.push_back(row.token); positions.push_back(row.position);
   }
   for (const auto& row : batch) s.requests.at(row.id).cache->ensure_tokens(row.position + 1);
+  if (!s.online_attention && !s.scores.data) s.scores.allocate(s.max_rows * s.w.heads * s.w.context * sizeof(float));
+  std::vector<KVCacheView> views;
+  for (const auto& row : batch) views.push_back(s.requests.at(row.id).cache->view());
+  check(cudaMemcpyAsync(s.cache_views.data, views.data(), views.size() * sizeof(KVCacheView), cudaMemcpyHostToDevice, s.config->stream));
   const int rows = batch.size(), kv = w.kv_heads * w.head_size;
   auto stream = s.config->stream;
   check(cudaMemcpyAsync(s.ids.data, ids.data(), rows * sizeof(int), cudaMemcpyHostToDevice, stream));
   check(cudaMemcpyAsync(s.positions.data, positions.data(), rows * sizeof(int), cudaMemcpyHostToDevice, stream));
-  kernel::prefill_embedding(s.ids.i(), w.embedding.ptr<float>(), s.x.f(), rows, w.hidden, stream);
+  auto embedding = s.linears.find(w.embedding.ptr<float>());
+  if (embedding != s.linears.end()) embedding->second->embedding(s.ids.i(), s.x.f(), rows, stream);
+  else kernel::prefill_embedding(s.ids.i(), w.embedding.ptr<float>(), s.x.f(), rows, w.hidden, stream);
   for (size_t layer = 0; layer < w.blocks.size(); ++layer) {
     const auto& b = w.blocks[layer];
     kernel::prefill_norm(s.x.f(), b.attention_norm.ptr<float>(), s.z.f(), rows, w.hidden, w.epsilon, stream);
@@ -153,15 +203,13 @@ std::vector<TokenOutput> CudaBatchBackend::execute(const std::vector<ScheduledTo
       kernel::prefill_norm(s.q.f(), b.query_norm.ptr<float>(), s.q.f(), rows * w.heads, w.head_size, w.epsilon, stream);
       kernel::prefill_norm(s.k.f(), b.key_norm.ptr<float>(), s.k.f(), rows * w.kv_heads, w.head_size, w.epsilon, stream);
     }
-    for (int r = 0; r < rows; ++r) {
-      auto cache = s.requests.at(batch[r].id).cache->view();
-      kernel::decode_rope(s.q.f(size_t(r) * w.attention), s.k.f(size_t(r) * kv), s.positions.i(r),
-          s.sine.ptr<float>(), s.cosine.ptr<float>(), w.attention, kv, w.head_size, w.split_half_rope, stream);
-      kernel::decode_store_cache(s.k.f(size_t(r) * kv), s.v.f(size_t(r) * kv), cache, layer, s.positions.i(r), stream);
-      kernel::decode_cache_attention(s.q.f(size_t(r) * w.attention), cache, layer,
-          s.scores.f(size_t(r) * w.heads * w.context), s.attention.f(size_t(r) * w.attention),
-          s.positions.i(r), batch[r].position, w.heads, w.kv_heads, w.head_size, stream);
-    }
+    auto* views = static_cast<const KVCacheView*>(s.cache_views.data);
+    kernel::batch_prepare_cache(s.q.f(), s.k.f(), s.v.f(), views, s.positions.i(), layer,
+        s.sine.ptr<float>(), s.cosine.ptr<float>(), rows, w.attention, kv, w.head_size, w.split_half_rope, stream);
+    if (s.online_attention) kernel::batch_online_attention(s.q.f(), views, s.positions.i(), layer,
+        s.attention.f(), rows, w.heads, w.kv_heads, w.head_size, stream);
+    else kernel::batch_reference_attention(s.q.f(), views, s.positions.i(), layer,
+        s.scores.f(), s.attention.f(), rows, w.heads, w.kv_heads, w.head_size, stream);
     s.linear(s.attention.f(), b.output, s.y.f(), rows);
     kernel::prefill_add(s.x.f(), s.y.f(), size_t(rows) * w.hidden, stream);
     kernel::prefill_norm(s.x.f(), b.ffn_norm.ptr<float>(), s.z.f(), rows, w.hidden, w.epsilon, stream);
@@ -170,19 +218,44 @@ std::vector<TokenOutput> CudaBatchBackend::execute(const std::vector<ScheduledTo
     s.linear(s.gate.f(), b.down, s.y.f(), rows);
     kernel::prefill_add(s.x.f(), s.y.f(), size_t(rows) * w.hidden, stream);
   }
-  kernel::prefill_norm(s.x.f(), w.final_norm.ptr<float>(), s.z.f(), rows, w.hidden, w.epsilon, stream);
-  s.linear(s.z.f(), w.classifier, s.logits.f(), rows);
-  for (int r = 0; r < rows; ++r)
-    kernel::decode_sample(s.logits.f(size_t(r) * w.vocab), w.vocab, s.sampled.i(r), s.positions.i(r), stream);
-  std::vector<int> tokens(rows);
-  check(cudaMemcpyAsync(tokens.data(), s.sampled.data, rows * sizeof(int), cudaMemcpyDeviceToHost, stream));
+  // Intermediate prompt rows only populate KV. Project/sample the rows
+  // actually emitted to callers; diagnostics explicitly request every row.
+  std::vector<int> output_rows;
+  for (int r = 0; r < rows; ++r) {
+    const auto& request = s.requests.at(batch[r].id);
+    if (s.on_logits || !batch[r].prompt || request.prompt.empty() ||
+        batch[r].position + 1 == int(request.prompt.size())) output_rows.push_back(r);
+  }
+  const int outputs = output_rows.size();
+  std::vector<int> tokens(outputs);
+  if (outputs) {
+    const float* final_hidden = s.x.f();
+    if (outputs != rows) {
+      check(cudaMemcpyAsync(s.output_indices.data, output_rows.data(), outputs * sizeof(int), cudaMemcpyHostToDevice, stream));
+      kernel::prefill_embedding(s.output_indices.i(), s.x.f(), s.y.f(), outputs, w.hidden, stream);
+      final_hidden = s.y.f();
+    }
+    kernel::prefill_norm(final_hidden, w.final_norm.ptr<float>(), s.z.f(), outputs, w.hidden, w.epsilon, stream);
+    s.linear(s.z.f(), w.classifier, s.logits.f(), outputs);
+    for (int j = 0; j < outputs; ++j)
+      kernel::decode_sample(s.logits.f(size_t(j) * w.vocab), w.vocab, s.sampled.i(j), s.positions.i(output_rows[j]), stream);
+    check(cudaMemcpyAsync(tokens.data(), s.sampled.data, outputs * sizeof(int), cudaMemcpyDeviceToHost, stream));
+  }
   check(cudaGetLastError()); check(cudaStreamSynchronize(stream));
-  std::vector<TokenOutput> result;
+  if (s.on_logits) {
+    std::vector<float> values(w.vocab);
+    for (int j = 0; j < outputs; ++j) {
+      const int r = output_rows[j];
+      check(cudaMemcpy(values.data(), s.logits.f(size_t(j) * w.vocab), w.vocab * sizeof(float), cudaMemcpyDeviceToHost));
+      s.on_logits(batch[r].id, batch[r].position, values);
+    }
+  }
+  std::vector<TokenOutput> result(rows, {0, false});
+  for (int j = 0; j < outputs; ++j) result[output_rows[j]] = {tokens[j], s.is_eos(tokens[j])};
   for (int r = 0; r < rows; ++r) {
     auto& request = s.requests.at(batch[r].id);
     ++request.position;
     if (batch[r].prompt && request.position == int(request.prompt.size())) s.publish(request);
-    result.push_back({tokens[r], s.is_eos(tokens[r])});
   }
   return result;
 }
@@ -210,6 +283,20 @@ int CudaBatchBackend::reuse_prefix(RequestId id, const std::vector<int32_t>& tok
   return request.position;
 }
 PrefixCacheStats CudaBatchBackend::prefix_stats() const { return impl_->prefix_stats; }
+void CudaBatchBackend::configure_attention(const std::string& mode) {
+  if (mode != "reference" && mode != "online") throw std::invalid_argument("Attention must be reference or online");
+  if (!impl_->requests.empty()) throw std::logic_error("Configure attention before admitting requests");
+  if (mode == "online" && impl_->w.head_size > 256) throw std::invalid_argument("Online attention supports head sizes up to 256");
+  if (impl_->scores.data) { check(cudaFree(impl_->scores.data)); impl_->scores.data = nullptr; }
+  impl_->online_attention = mode == "online";
+}
+uint64_t CudaBatchBackend::attention_workspace_bytes() const {
+  return impl_->online_attention ? 0 : impl_->max_rows * impl_->w.heads * impl_->w.context * sizeof(float);
+}
+uint64_t CudaBatchBackend::linear_weight_bytes() const { return impl_->weight_bytes; }
+void CudaBatchBackend::set_logits_callback(std::function<void(RequestId, int, const std::vector<float>&)> callback) {
+  impl_->on_logits = std::move(callback);
+}
 KVCacheStats CudaBatchBackend::cache_stats() const {
   KVCacheStats total; total.paged = true;
   auto add = [&](const auto& cache) { auto v = cache->stats();

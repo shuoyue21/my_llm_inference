@@ -19,7 +19,7 @@ class Model {
  public:
   virtual ~Model() = default;
   // The model must outlive its serving backend (tokenizer EOS predicate).
-  virtual std::unique_ptr<runtime::CudaBatchBackend> create_batch_backend(size_t max_rows) const;
+  virtual std::unique_ptr<runtime::CudaBatchBackend> create_batch_backend(size_t max_rows, const std::string& precision = "fp32") const;
   int32_t context_length() const { return config_->seq_len_; }
   int32_t vocab_size() const { return config_->vocab_size_; }
   base::DeviceType device_type() const { return device_type_; }

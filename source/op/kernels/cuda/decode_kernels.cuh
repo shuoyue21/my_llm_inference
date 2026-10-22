@@ -19,4 +19,9 @@ void decode_prepare_cache_qkv(float* qkv,const float* bias,const float* query_no
                               int heads,int kv_heads,int head_size,float epsilon,bool split_half,cudaStream_t stream);
 void decode_cache_attention(const float* query,runtime::KVCacheView cache,int layer,float* scores,float* output,
                             const int* position,int host_position,int heads,int kv_heads,int head_size,cudaStream_t stream);
+void batch_prepare_cache(float* query,const float* key,const float* value,const runtime::KVCacheView* caches,
+    const int* positions,int layer,const float* sine,const float* cosine,int rows,
+    int query_width,int key_width,int head_size,bool split_half,cudaStream_t stream);
+void batch_reference_attention(const float* query,const runtime::KVCacheView* caches,const int* positions,
+    int layer,float* scores,float* output,int rows,int heads,int kv_heads,int head_size,cudaStream_t stream);
 }  // namespace kernel

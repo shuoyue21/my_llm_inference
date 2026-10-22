@@ -1,7 +1,7 @@
 file(GLOB OP_TESTS CONFIGURE_DEPENDS test_op/test_cu_*.cpp)
 add_executable(test_llm test_main.cpp utils.cu
   test_tensor/test_buffer.cpp test_tensor/test_tensor.cpp
-  ${OP_TESTS} test_runtime.cpp test_prefill.cpp test_decode.cpp test_paged.cpp test_scheduler.cpp)
+  ${OP_TESTS} test_runtime.cpp test_prefill.cpp test_decode.cpp test_paged.cpp test_scheduler.cpp test_online.cpp)
 target_link_libraries(test_llm PRIVATE llama GTest::gtest)
 target_include_directories(test_llm PRIVATE ${PROJECT_SOURCE_DIR})
 set_target_properties(test_llm PROPERTIES CUDA_SEPARABLE_COMPILATION ON)

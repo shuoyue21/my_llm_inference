@@ -6,7 +6,7 @@ import argparse,datetime,gzip,hashlib,json,os,platform,statistics,subprocess,tim
 from pathlib import Path
 from empty_gpu import GpuMonitor,NoIdleGpu
 from freeze_stage import digest
-from measurement_records import harness_provenance,prepare_existing_result
+from measurement_records import harness_provenance,prepare_existing_result,archive_attempt
 
 def quantile(values,q):
  x=sorted(values)
@@ -19,7 +19,7 @@ def summarize(samples,prompt_length):
   for name in ['load_ms','total_ms','output_tokens_per_second','requests_per_second','ttft_ms','ttft_p95_ms','ttft_p99_ms','latency_p50_ms','latency_p95_ms','latency_p99_ms','tpot_p50_ms','tpot_p95_ms','tpot_p99_ms','queue_p95_ms','gpu_load_memory_bytes']:
    values=[sample[name] for sample in samples]
    metrics[name]={'median':statistics.median(values),'min':min(values),'max':max(values)}
-  for name in ['prefix_lookups','prefix_hits','prefix_reused_tokens','prefix_evictions','prefix_cache_bytes','linear_weight_bytes','attention_workspace_bytes']:
+  for name in ['backend_setup_ms','prefix_lookups','prefix_hits','prefix_reused_tokens','prefix_evictions','prefix_cache_bytes','linear_weight_bytes','attention_workspace_bytes']:
    if all(name in sample for sample in samples):
     values=[sample[name] for sample in samples]
     metrics[name]={'median':statistics.median(values),'min':min(values),'max':max(values)}
@@ -48,6 +48,7 @@ def main():
  try:gate=monitor.acquire(a.wait_seconds)
  except NoIdleGpu as error:
   record={'status':'waiting_for_empty_gpu','gpu_policy':monitor.policy,'time_utc':datetime.datetime.now(datetime.timezone.utc).isoformat(),'reason':str(error),'gpu_observations':error.history}
+  if (root/'waiting.json').exists():archive_attempt(root/'waiting.json')
   (root/'waiting.json').write_text(json.dumps(record,indent=2)+'\n');print(json.dumps({'status':record['status'],'gpus_observed':len(error.history)}));return 75
  try:
   print(json.dumps({'status':'empty_gpu_acquired','uuid':monitor.uuid}),flush=True)
@@ -103,7 +104,7 @@ def main():
         if [r['generated_tokens'] for r in requests]!=[r['generated_tokens'] for r in first['requests']]:reasons.append('nondeterministic_serving_tokens')
       elif any(len(s['prompt_tokens'])!=prompt_length or len(s['generated_tokens'])!=output_length or len(s['decode_token_ms'])!=output_length-1 for s in samples):reasons.append('wrong_token_counts')
       elif any(s['prompt_tokens']!=ids or s['generated_tokens']!=samples[0]['generated_tokens'] for s in samples):reasons.append('nondeterministic_tokens')
-     record={'accepted':not reasons,'rejection_reasons':reasons,'stage':a.stage,'source_revision':manifest['source_revision'],'source_digest':manifest['source_digest'],'gpu_uuid':monitor.uuid,'precision':manifest['precision'],'gpu_policy':monitor.policy,'model':model['name'],'prompt_tokens':prompt_length,'generated_tokens':output_length,'warmups':workload['warmups'],'repeats':workload['repeats'],'cpu_threads':workload['cpu_threads'],'harness':harness_provenance(),'command':command,'extra_args':a.extra_arg,'label':a.label,'environment':{k:env[k] for k in ['CUDA_VISIBLE_DEVICES','OPENBLAS_NUM_THREADS','OMP_NUM_THREADS','LD_LIBRARY_PATH']},'platform':platform.platform(),'cpu_affinity':sorted(os.sched_getaffinity(0)),'system_load_average':os.getloadavg(),'driver_version':__import__('pynvml').nvmlSystemGetDriverVersion(),'gate':gate,'before':latest,'monitor':{k:v for k,v in telemetry.items() if k!='samples'},'telemetry_file':str(trace_path),'samples':samples,'time_utc':datetime.datetime.now(datetime.timezone.utc).isoformat()}
+     record={'accepted':not reasons,'rejection_reasons':reasons,'stage':a.stage,'source_revision':manifest['source_revision'],'source_digest':manifest['source_digest'],'gpu_uuid':monitor.uuid,'precision':samples[0].get('precision',manifest['precision']) if samples else manifest['precision'],'checkpoint_precision':manifest['precision'],'gpu_policy':monitor.policy,'model':model['name'],'prompt_tokens':prompt_length,'generated_tokens':output_length,'warmups':workload['warmups'],'repeats':workload['repeats'],'cpu_threads':workload['cpu_threads'],'harness':harness_provenance(),'command':command,'extra_args':a.extra_arg,'label':a.label,'environment':{k:env[k] for k in ['CUDA_VISIBLE_DEVICES','OPENBLAS_NUM_THREADS','OMP_NUM_THREADS','LD_LIBRARY_PATH']},'platform':platform.platform(),'cpu_affinity':sorted(os.sched_getaffinity(0)),'system_load_average':os.getloadavg(),'driver_version':__import__('pynvml').nvmlSystemGetDriverVersion(),'gate':gate,'before':latest,'monitor':{k:v for k,v in telemetry.items() if k!='samples'},'telemetry_file':str(trace_path),'samples':samples,'time_utc':datetime.datetime.now(datetime.timezone.utc).isoformat()}
      if record['accepted']:record['metrics']=summarize(samples,prompt_length)
      result_path.write_text(json.dumps(record,indent=2)+'\n')
      if not telemetry['valid']:
@@ -119,6 +120,7 @@ def main():
   (root/'summary.json').write_text(json.dumps({'stage':a.stage,'source_revision':manifest['source_revision'],'source_digest':manifest['source_digest'],'gpu_uuid':monitor.uuid,'completed_cases':completed,'selected_models':a.model,'label':a.label,'extra_args':a.extra_arg,'status':'selected_models_complete' if a.model else 'complete'},indent=2)+'\n')
   return 0
  except NoIdleGpu as error:
+  if (root/'waiting.json').exists():archive_attempt(root/'waiting.json')
   (root/'waiting.json').write_text(json.dumps({'status':'waiting_for_empty_gpu','gpu_policy':monitor.policy,'gpu_observations':error.history},indent=2)+'\n');print('Waiting for the selected GPU to become empty again',flush=True);return 75
  finally:monitor.release()
 if __name__=='__main__':raise SystemExit(main())

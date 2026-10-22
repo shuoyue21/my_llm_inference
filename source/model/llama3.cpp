@@ -150,13 +150,18 @@ base::Status LLama2Model::init(base::DeviceType device_type) {
   return error::Success();
 }
 
-std::unique_ptr<runtime::CudaBatchBackend> LLama2Model::create_batch_backend(size_t max_rows) const {
-  if (device_type_ != base::DeviceType::kDeviceCUDA || is_quant_model_)
-    throw std::invalid_argument("Continuous batching requires CUDA FP32");
+std::unique_ptr<runtime::CudaBatchBackend> LLama2Model::create_batch_backend(size_t max_rows, const std::string& precision) const {
+  if (is_quant_model_ || device_type_ == base::DeviceType::kDeviceUnknown)
+    throw std::invalid_argument("Serving backend requires an initialized FP32 checkpoint");
+  auto stream = cuda_config_;
+  if (!stream) {
+    stream = std::make_shared<kernel::CudaConfig>();
+    if (cudaStreamCreate(&stream->stream) != cudaSuccess) throw std::runtime_error("CUDA stream creation failed");
+  }
   return std::make_unique<runtime::CudaBatchBackend>(
-      runtime::collect_prefill_weights(*llama_layers_, *config_), cuda_config_,
+      runtime::collect_prefill_weights(*llama_layers_, *config_), stream,
       get_buffer(ModelBufferType::kSinCache), get_buffer(ModelBufferType::kCosCache),
-      max_rows, kv_page_tokens_, [this](int token) { return is_sentence_ending(token); });
+      max_rows, kv_page_tokens_, [this](int token) { return is_sentence_ending(token); }, precision);
 }
 
 base::Status LLama2Model::prefill(const std::vector<int32_t>& tokens,

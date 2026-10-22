@@ -21,7 +21,7 @@ Model::Model(base::TokenizerType tokenizer_type, base::ModelType model_type, std
       model_path_(std::move(model_path)),
       is_quant_model_(is_quant_model) {}
 
-std::unique_ptr<runtime::CudaBatchBackend> Model::create_batch_backend(size_t) const {
+std::unique_ptr<runtime::CudaBatchBackend> Model::create_batch_backend(size_t, const std::string&) const {
   throw std::runtime_error("This model does not provide a CUDA batch backend");
 }
 

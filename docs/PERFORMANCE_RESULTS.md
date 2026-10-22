@@ -18,3 +18,5 @@
 运行标识为 `Forward-20261015-163413-desktop`。用户允许 `/Xwayland` 图形驻留，所有阶段统一使用 `scripts/gpu_policies/wsl_desktop.json`，没有终止其他人的任务。
 
 Git 只保存源码、测试、复现配置与本文汇总。逐场景 JSON、stdout/stderr、tokens、NVML 轨迹、失败尝试、完整 CSV 和审计输出均留在被忽略的 `docs/performance/`；冻结二进制与动态库在 `.artifacts/performance/`，正确性原始 logits 在 `.artifacts/validation/`。这些目录不随克隆分发。冻结记录中的旧源码版本号保留用于本机追溯，不因提交整理而改写原始实验记录。
+
+第 4–7 项扩展已完成，新增四模型 432 场景、2160 组正式采样；并发、前缀缓存、混合精度/量化与 online Attention 的收益及退化见 [扩展性能记录](PERFORMANCE_EXTENSIONS.md)，接口及复现见 [SERVING.md](SERVING.md)。
